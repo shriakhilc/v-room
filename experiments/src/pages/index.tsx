@@ -1,9 +1,20 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { trpc } from "../utils/trpc";
+import Script from "next/script";
+import { useEffect } from "react";
 
 const Home: NextPage = () => {
   const hello = trpc.useQuery(["example.hello", { text: "from tRPC" }]);
+
+  useEffect(() => {
+    import('peerjs').then(({ default: Peer }) => {
+      const peer = new Peer();
+      peer.on('open', function (id) {
+        console.log('My peer ID is: ' + id);
+      });
+    });
+  }, [])
 
   return (
     <>
