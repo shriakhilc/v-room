@@ -15,6 +15,7 @@
     "jsx": "preserve",
     "incremental": true,
     "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
     "paths": {
       "@/src/*": [
         "src/*"
@@ -27,7 +28,8 @@
       ],
       "@/components/*": [
         "src/components/*"
-      ],
+      ]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.mjs"],
   "exclude": ["node_modules"]
