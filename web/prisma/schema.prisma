@@ -51,6 +51,7 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+    classrooms    UsersOnClassrooms[]
 }
 
 model VerificationToken {
@@ -59,4 +60,20 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Classroom {
+    id         String               @id @default(cuid())
+    users      UsersOnClassrooms[]
+    inviteCode String               @default(cuid())
+    active     Boolean              @default(true)
+}
+
+model UsersOnClassrooms {
+    user        User      @relation(fields: [userId], references: [id])
+    userId      String
+    classroom   Classroom @relation(fields: [classroomId], references: [id])
+    classroomId String
+
+    @@id([userId, classroomId])
 }
