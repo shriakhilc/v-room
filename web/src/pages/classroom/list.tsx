@@ -33,7 +33,7 @@ const ClassroomList: NextPage<PageProps> = ({ data }) => {
               return <li key={index}>{JSON.stringify(classroom)}</li>
             })}
           </ul>
-          <button onClick={async () => setClassrooms(await addClassroom())} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Classroom</button>
+          <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Classroom</button>
         </main>
 
         <Footer></Footer>
@@ -41,11 +41,6 @@ const ClassroomList: NextPage<PageProps> = ({ data }) => {
     </>
   );
 };
-
-const addClassroom = async () => {
-  const data = await getAllClassrooms();
-  return data;
-}
 
 export async function getServerSideProps() {
   const data = await getAllClassrooms();
