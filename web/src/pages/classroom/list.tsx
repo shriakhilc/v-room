@@ -13,6 +13,23 @@ type PageProps = {
 const ClassroomList: NextPage<PageProps> = ({ data }) => {
   const [classrooms, setClassrooms] = React.useState(data);
 
+  async function addClassroom() {
+    const created = await fetch('../api/classroom/create', {
+      method: 'POST'
+    });
+    if(created.status == 200) {
+      const res = await fetch('../api/classroom/', {
+        method: 'GET'
+      });
+      const newClassrooms = await res.json();
+      setClassrooms(newClassrooms.classrooms);
+    }
+    else {
+      console.log(created);
+    }
+
+  }
+
   return (
     <>
       <div className="container mx-auto h-screen">
@@ -33,7 +50,7 @@ const ClassroomList: NextPage<PageProps> = ({ data }) => {
               return <li key={index}>{JSON.stringify(classroom)}</li>
             })}
           </ul>
-          <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Classroom</button>
+          <button onClick={addClassroom} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Classroom</button>
         </main>
 
         <Footer></Footer>

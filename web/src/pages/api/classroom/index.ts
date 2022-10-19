@@ -7,11 +7,13 @@ export async function getAllClassrooms() {
 }
 
 export default async function handler (req: NextApiRequest, res: NextApiResponse) {
-    try {
-        const classrooms = await getAllClassrooms();
-        res.status(200).json({classrooms});
-    } catch(e) {
-        res.status(500).json({error: e});
+    if(req.method == 'GET') {
+        try {
+            const classrooms = await getAllClassrooms();
+            res.status(200).json({classrooms});
+        } catch(e) {
+            res.status(500).json({error: e});
+        }
     }
 }
 

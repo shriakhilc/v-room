@@ -7,11 +7,13 @@ export async function createClassroom() {
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-    try {
-        const result = createClassroom();
-        res.status(200).json({result});
-    } catch(e) {
-        res.status(500).json({error: e});
+    if(req.method == 'POST') {
+        try {
+            const result = createClassroom();
+            res.status(200).json({result});
+        } catch(e) {
+            res.status(500).json({error: e});
+        }
     }
 }
 
