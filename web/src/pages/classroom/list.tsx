@@ -3,6 +3,7 @@ import Head from "next/head";
 import Header from "../../components/header"
 import Footer from "../../components/footer"
 import { getAllClassrooms } from "../api/classroom";
+import ClassroomTable from "@/src/components/classroomTable";
 import type { Classroom } from '@prisma/client';
 import React from "react";
 
@@ -41,17 +42,14 @@ const ClassroomList: NextPage<PageProps> = ({ data }) => {
 
         <Header></Header>
 
-        <main className="container mx-auto h-2/3 flex flex-col items-left p-4">
-          <h1 className="text-base leading-normal">
-            Welcome to <span className="text-red-500">the Classroom List Page</span>
+        <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
+          <h1 className="text-lg leading-normal p-4">
+            <span className="text-red-500">Your Classrooms</span>
           </h1>
-          <ul>
-            {classrooms.map(function(classroom, index){
-              return <li key={index}>{JSON.stringify(classroom)}</li>
-            })}
-          </ul>
+          <ClassroomTable classrooms={classrooms}></ClassroomTable>
           <button onClick={addClassroom} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Classroom</button>
         </main>
+
 
         <Footer></Footer>
       </div>

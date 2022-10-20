@@ -4,9 +4,9 @@ class Header extends React.Component {
     render() {
         return (
             <>
-                <header className="container mx-auto flex flex-row p-4 h-1/6">
-                    <p className="text-sm font-extrabold leading-normal">
-                        Test Header 
+                <header className="container mx-auto flex flex-row p-4 h-20 border-b-2">
+                    <p className="text-3xl font-extrabold leading-normal">
+                        V-Room 
                     </p>
                 </header>
             </>
