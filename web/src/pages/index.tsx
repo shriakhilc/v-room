@@ -4,8 +4,18 @@ import Link from 'next/link';
 import { SessionProvider } from 'next-auth/react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 const Home: NextPage = () => {
-  const { data: session } = useSession();
-  console.log("cccccccccc",session);
+  const handleSignIn = async () => {
+    await signIn('google', {
+      callbackUrl: 'http://localhost:3000/dashboard',
+    })
+  }
+
+  const handleLogout = async () => {
+    await signOut({
+      callbackUrl: 'http://localhost:3000/',
+    })
+  }
+  const { data, status } = useSession()
   return (
     <>
       <Head>
@@ -15,34 +25,33 @@ const Home: NextPage = () => {
       </Head>
       <nav>
       <p>
-          {!session && (
+          {status!="authenticated" && (
             <a
               href="/api/auth/signin"
               onClick={(e) => {
                 e.preventDefault();
-                signIn();
+                handleSignIn();
               }}
             >
               <button className="signInButton">Sign in</button>
             </a>
-             
           )}
-          {session && (
+          {status=="authenticated" && (
             <>
               <Link href="/profile">
                 <a>
                   <span
-                    style={{ backgroundImage: `url(${session.user?.image})` }}
+                    style={{ backgroundImage: `url(${data.user?.image})` }}
                     className="avatar"
                   />
                 </a>
               </Link>
-              <span className="email">{session.user?.email}</span>
+              <span className="email">{data.user?.email}</span>
               <a
                 href="/api/auth/signout"
                 onClick={(e) => {
                   e.preventDefault();
-                  signOut();
+                  handleLogout();
                 }}
               >
                 <button className="signOutButton">Sign out</button>
