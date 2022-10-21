@@ -84,7 +84,7 @@ model StudentsOnClassrooms {
   classroom   Classroom @relation(fields: [classroomId], references: [id])
   classroomId Int 
 
-  @@id([postId, categoryId])
+  @@id([userId, classroomId])
 }
 
 model AssistantsOnClassrooms {
@@ -102,6 +102,6 @@ model InstructorsOnClassrooms {
   classroom   Classroom @relation(fields: [classroomId], references: [id])
   classroomId Int 
 
-  @@id([postId, categoryId])
+  @@id([userId, classroomId])
 }
 
