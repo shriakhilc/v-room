@@ -1,35 +1,23 @@
-import type { NextPage } from "next";
+import type { GetServerSidePropsContext, NextPage } from "next";
 import Head from "next/head";
 import Header from "../../components/header"
 import Footer from "../../components/footer"
-import { getAllClassrooms } from "../api/classrooms";
-import ClassroomTable from "@/src/components/classroomTable";
-import type { Classroom } from '@prisma/client';
+import type { Classroom, User } from '@prisma/client';
 import React from "react";
+import UserTable from "@/src/components/userTable";
+import { getAllUsers } from "../api/users";
+import { useRouter } from 'next/router';
+import { getClassroom } from "../api/classrooms/[classroomId]";
+import { getUsersForClassroom } from "../api/users/classrooms/[classroomId]";
 
 type PageProps = {
-  data: Classroom[];
+  allUsersSectioned: User[],
+  userRoles: string[],
+  classroom: Classroom
 }
 
-const ClassroomList: NextPage<PageProps> = ({ data }) => {
-  const [classrooms, setClassrooms] = React.useState(data);
-
-  async function addClassroom() {
-    const created = await fetch('../api/classroom/create', {
-      method: 'POST'
-    });
-    if(created.status == 200) {
-      const res = await fetch('../api/classroom/', {
-        method: 'GET'
-      });
-      const newClassrooms = await res.json();
-      setClassrooms(newClassrooms.classrooms);
-    }
-    else {
-      console.log(created);
-    }
-
-  }
+const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, classroom }) => {
+  const router = useRouter();
 
   return (
     <>
@@ -44,10 +32,9 @@ const ClassroomList: NextPage<PageProps> = ({ data }) => {
 
         <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
           <h1 className="text-lg leading-normal p-4">
-            <span className="text-red-500">Your Classrooms</span>
+            <span className="text-red-500">Users for </span>
           </h1>
-          <ClassroomTable classrooms={classrooms}></ClassroomTable>
-          <button onClick={addClassroom} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Classroom</button>
+          <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom}></UserTable>
         </main>
 
 
@@ -57,9 +44,39 @@ const ClassroomList: NextPage<PageProps> = ({ data }) => {
   );
 };
 
-export async function getServerSideProps() {
-  const data = await getAllClassrooms();
-  return { props: { data }};
+export async function getServerSideProps(context:GetServerSidePropsContext) {
+  const allUsers = await getAllUsers();
+  const classroomId = context.query.classroomId;
+  if(typeof classroomId === 'string') {
+    const classroom = await getClassroom(classroomId as string);
+    const splitUsers = await getUsersForClassroom(classroomId as string);
+    const enrolledUsers = 
+      splitUsers.studentUsers.concat(splitUsers.assistantUsers.concat(splitUsers.instructorUsers));
+    const unenrolledUsers = allUsers.filter(user1 => 
+      !enrolledUsers.map(user2=>user2.id).includes(user1.id)
+    );
+    const userRoles:string[] = [];
+    splitUsers.studentUsers.forEach((element) => {
+      userRoles.push("Student");
+    });
+    splitUsers.assistantUsers.forEach((element) => {
+      userRoles.push("Assistant");
+    });
+    splitUsers.instructorUsers.forEach((element) => {
+      userRoles.push("Instructor");
+    });
+    unenrolledUsers.forEach((element) => {
+      userRoles.push("None");
+    });
+    const allUsersSectioned = enrolledUsers.concat(unenrolledUsers);
+    return { props: { allUsersSectioned, userRoles, classroom }};
+  }
+  else {
+    const classroom = null;
+    const enrolledUsers = null;
+    return { props: { allUsers, classroom, enrolledUsers}};
+  }
+
 }
 
-export default ClassroomList;
+export default ClassroomDetail;

@@ -1,47 +1,55 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../server/db/client";
 
-const getUsersForClassroom = async (req: NextApiRequest, res: NextApiResponse) => {
+export async function getUsersForClassroom(classroomId: string) {
+    const studentUsers = await prisma.user.findMany({
+        where: {
+            classroomsAsStudent: {
+                some: {
+                    classroom: {
+                        id: classroomId as string,
+                    }
+                }
+            }
+        }
+    });
+    const assistantUsers = await prisma.user.findMany({
+        where: {
+            classroomsAsAssistant: {
+                some: {
+                    classroom: {
+                        id: classroomId as string,
+                    }
+                }
+            }
+        }
+    });
+    const instructorUsers = await prisma.user.findMany({
+        where: {
+            classroomsAsInstructor: {
+                some: {
+                    classroom: {
+                        id: classroomId as string,
+                    }
+                }
+            }
+        }
+    });
+    return {studentUsers: studentUsers, 
+            assistantUsers: assistantUsers, 
+            instructorUsers: instructorUsers};
+}
+
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
         const classroomId  = req.query?.classroomId;
         if(classroomId) {
-            const studentUsers = await prisma.user.findMany({
-                where: {
-                    classroomsAsStudent: {
-                        some: {
-                            classroom: {
-                                id: classroomId as string,
-                            }
-                        }
-                    }
-                }
-            });
-            const assistantUsers = await prisma.user.findMany({
-                where: {
-                    classroomsAsAssistant: {
-                        some: {
-                            classroom: {
-                                id: classroomId as string,
-                            }
-                        }
-                    }
-                }
-            });
-            const instructorUsers = await prisma.user.findMany({
-                where: {
-                    classroomsAsInstructor: {
-                        some: {
-                            classroom: {
-                                id: classroomId as string,
-                            }
-                        }
-                    }
-                }
-            });
+            const users = await getUsersForClassroom(classroomId as string);
             res.status(200).json({ 
-                studentClassrooms: studentUsers,
-                assistantClassrooms: assistantUsers,
-                instructorClassrooms: instructorUsers
+                studentUsers: users.studentUsers,
+                assistantUsers: users.assistantUsers,
+                instructorUsers: users.instructorUsers
             });
         }
         else {
@@ -52,5 +60,5 @@ const getUsersForClassroom = async (req: NextApiRequest, res: NextApiResponse) =
     }
 }
 
-export default getUsersForClassroom;
+export default handler;
 

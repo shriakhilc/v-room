@@ -1,4 +1,5 @@
 import { Classroom } from "@prisma/client";
+import Link from "next/link";
 import React from "react";
   
 interface ClassroomTableProps {
@@ -11,7 +12,7 @@ class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
             <div className="flex flex-col">
                 <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="py-2 align-middle min-w-full sm:px-6 lg:px-8">
-                        <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem]">
+                        <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem] min-h-[50rem]">
                             <table className="min-w-full max-h-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -62,9 +63,11 @@ class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {this.props.classrooms.map(classroom => (
                                     <tr key={classroom.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {classroom.name}
-                                        </td>
+                                        <Link href={`/classroom/${classroom.id}`}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900 hover:text-blue-500 cursor-pointer">
+                                                <a>{classroom.name}</a>
+                                            </td>
+                                        </Link>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {classroom.department}    
                                         </td>
