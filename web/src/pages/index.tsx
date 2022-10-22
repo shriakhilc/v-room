@@ -6,7 +6,7 @@ import { signIn, signOut, useSession } from 'next-auth/react';
 const Home: NextPage = () => {
   const handleSignIn = async () => {
     await signIn('google', {
-      callbackUrl: 'http://localhost:3000/dashboard',
+      callbackUrl: '/user/register',
     })
   }
 
