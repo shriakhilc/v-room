@@ -8,7 +8,6 @@ const Home: NextPage = () => {
     await signIn('google', {
       callbackUrl: '/user/register',
     })
-    
   }
 
   const handleLogout = async () => {
@@ -29,9 +28,9 @@ const Home: NextPage = () => {
           {status!="authenticated" && (
             <a
               href="/api/auth/signin"
-              onClick={async(e) => {
+              onClick={(e) => {
                 e.preventDefault();
-               const res=await handleSignIn();
+                handleSignIn();
               }}
             >
               <button className="signInButton">Sign in</button>
