@@ -133,7 +133,7 @@ function formCompleted() {
 
         {status != "authenticated" && 
         <main className="max-h-[50rem] min-h-[50rem]">
-          It seems you aren't logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.
+          It seems you aren&apos;t logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.
         </main>
         }
         <Footer></Footer>

@@ -7,7 +7,7 @@ interface ClassroomTableProps {
     roles: string[]
 }
 
-class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
+class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
     render() {
         return (
             <div className="flex flex-col">

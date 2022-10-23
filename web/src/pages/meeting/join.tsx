@@ -2,7 +2,6 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router"
 import Head from "next/head";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
 
 const MeetingParticipant = dynamic(() => import('@/components/meeting_participant'), {
     ssr: false,

@@ -28,7 +28,7 @@ const Home: NextPage = () => {
       <nav>
       <p>
           {status!="authenticated" && (
-            <a
+            <Link
               href="/api/auth/signin"
               onClick={(e) => {
                 e.preventDefault();
@@ -36,20 +36,18 @@ const Home: NextPage = () => {
               }}
             >
               <button className="signInButton">Sign in</button>
-            </a>
+            </Link>
           )}
           {status=="authenticated" && (
             <>
               <Link href="/user/profile">
-                <a>
                   <span
                     style={{ backgroundImage: `url(${data.user?.image})` }}
                     className="avatar"
                   />
-                </a>
               </Link>
               <span className="email">{data.user?.email}</span>
-              <a
+              <Link
                 href="/api/auth/signout"
                 onClick={(e) => {
                   e.preventDefault();
@@ -57,7 +55,7 @@ const Home: NextPage = () => {
                 }}
               >
                 <button className="signOutButton">Sign out</button>
-              </a>
+              </Link>
             </>
           )}
         </p>
