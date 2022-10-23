@@ -61,7 +61,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
 
     return (
         <div className="w-4/12">
-            <video className="card" ref={localStreamView} autoPlay playsInline></video>
+            <video className="card" ref={localStreamView} autoPlay playsInline muted></video>
             <div className="btn-group btn-group-horizontal">
                 <button className={playing ? "btn btn-success" : "btn btn-error"}
                     onClick={playing ? stopStream : startStream}>
