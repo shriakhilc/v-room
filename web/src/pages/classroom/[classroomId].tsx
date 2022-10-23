@@ -11,14 +11,17 @@ import { getClassroom } from "../api/classrooms/[classroomId]";
 import { getUsersForClassroom } from "../api/user/classrooms/[classroomId]";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { authOptions } from "../api/auth/[...nextauth]";
+import { unstable_getServerSession } from "next-auth";
 
 type PageProps = {
   allUsersSectioned: User[],
   userRoles: string[],
-  classroom: Classroom
+  classroom: Classroom,
+  currentUserRole: string,
 }
 
-const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, classroom }) => {
+const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, classroom, currentUserRole }) => {
   const router = useRouter();
   const { data, status } = useSession();
   console.log(status);
@@ -38,7 +41,7 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
             <h1 className="text-lg leading-normal p-4">
               <span className="text-red-500">Users in {classroom.name}</span>
             </h1>
-            <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom}></UserTable>
+            <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
           </main>)
         }
         {status != "authenticated" && 
@@ -53,9 +56,13 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
 };
 
 export async function getServerSideProps(context:GetServerSidePropsContext) {
+  const session = await unstable_getServerSession(
+    context.req,
+    context.res,
+    authOptions);
   const allUsers = await getAllUsers();
   const classroomId = context.query.classroomId;
-  if(typeof classroomId === 'string') {
+  if(typeof classroomId === 'string' && session) {
     const classroom = await getClassroom(classroomId as string);
     const splitUsers = await getUsersForClassroom(classroomId as string);
     const enrolledUsers = 
@@ -64,25 +71,39 @@ export async function getServerSideProps(context:GetServerSidePropsContext) {
       !enrolledUsers.map(user2=>user2.id).includes(user1.id)
     );
     const userRoles:string[] = [];
+    let currentUserRole = "";
     splitUsers.studentUsers.forEach((element) => {
-      userRoles.push("Student");
+      userRoles.push("student");
+      if(element.email == session?.user?.email) {
+        currentUserRole = "student";
+      }
     });
     splitUsers.assistantUsers.forEach((element) => {
-      userRoles.push("Assistant");
+      userRoles.push("assistant");
+      if(element.email == session?.user?.email) {
+        currentUserRole = "assistant";
+      }
     });
     splitUsers.instructorUsers.forEach((element) => {
-      userRoles.push("Instructor");
+      userRoles.push("instructor");
+      if(element.email == session?.user?.email) {
+        currentUserRole = "instructor";
+      }
     });
     unenrolledUsers.forEach((element) => {
       userRoles.push("None");
+      if(element.email == session?.user?.email) {
+        currentUserRole = "None";
+      }
     });
     const allUsersSectioned = enrolledUsers.concat(unenrolledUsers);
-    return { props: { allUsersSectioned, userRoles, classroom }};
+    return { props: { allUsersSectioned, userRoles, classroom, currentUserRole }};
   }
   else {
     const classroom = null;
     const enrolledUsers = null;
-    return { props: { allUsers, classroom, enrolledUsers}};
+    const currentUserRole = null;
+    return { props: { allUsers, classroom, enrolledUsers, currentUserRole}};
   }
 
 }

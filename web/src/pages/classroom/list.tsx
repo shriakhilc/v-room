@@ -15,10 +15,11 @@ import { getClassroomsForUser } from "../api/classrooms/users/[userId]";
 
 type PageProps = {
   classroomData: Classroom[],
-  userRoles: string[]
+  userRoles: string[],
+  userEmail: string
 }
 
-const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles }) => {
+const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmail }) => {
   const [classrooms, setClassrooms] = React.useState(classroomData);
   const [show, setShow]  = React.useState(false);
   const [newName, setNewName]  = React.useState("");
@@ -30,7 +31,6 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles }) => {
   const {data, status} = useSession();
 
   async function addClassroom() {
-    console.log("adding classroom");
     const created = await fetch('../api/classrooms/create', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -41,12 +41,49 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles }) => {
         "crn": parseInt(newCrn, 10) 
       })
     });
+
     if(created.status == 200) {
-      const res = await fetch('../api/classrooms/', {
+      const newClassroom = await created.json();
+      const user = await fetch('../api/user/12345', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          email: data?.user?.email
+        })
+      });
+      const userJson = await user.json();
+
+      const newRelation = await fetch('../api/classrooms/users/add', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          userId: userJson.user.id,
+          classroomId: newClassroom.result.id,
+          role: 'instructor'
+        })
+      });
+
+      const updatedClassrooms = await fetch('../api/classrooms/users/' + userJson.user.id, {
         method: 'GET'
       });
-      const newClassrooms = await res.json();
-      setClassrooms(newClassrooms.classrooms);
+      const classroomsJson = await updatedClassrooms.json();
+      console.log(classroomsJson);
+
+      const userRoles:string[] = [];
+      classroomsJson.studentClassrooms.forEach(() => {
+        userRoles.push("student");
+      });
+      classroomsJson.assistantClassrooms.forEach(() => {
+        userRoles.push("assistant");
+      });
+      classroomsJson.instructorClassrooms.forEach(() => {
+        userRoles.push("instructor");
+      });
+      const concatenatedClassrooms = classroomsJson.studentClassrooms.concat(classroomsJson.assistantClassrooms.concat(classroomsJson.instructorClassrooms));
+      setClassrooms(concatenatedClassrooms);
+      setRoles(userRoles);
+      console.log(userRoles);
+      
     }
     else {
       setError(true);
@@ -154,16 +191,16 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       const classrooms = await getClassroomsForUser(user.id);
       const userRoles:string[] = [];
       classrooms.studentClassrooms.forEach((element) => {
-        userRoles.push("Student");
+        userRoles.push("student");
       });
       classrooms.assistantClassrooms.forEach((element) => {
-        userRoles.push("Assistant");
+        userRoles.push("assistant");
       });
-      classrooms.assistantClassrooms.forEach((element) => {
-        userRoles.push("Instructor");
+      classrooms.instructorClassrooms.forEach((element) => {
+        userRoles.push("instructor");
       });
       const concatenatedClassrooms = classrooms.studentClassrooms.concat(classrooms.assistantClassrooms.concat(classrooms.instructorClassrooms));
-      return { props: { classroomData: concatenatedClassrooms, userRoles: userRoles }};
+      return { props: { classroomData: concatenatedClassrooms, userRoles: userRoles, userId: session.user?.email }};
     }
   }
   else {

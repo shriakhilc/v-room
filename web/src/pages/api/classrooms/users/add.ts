@@ -3,6 +3,9 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../server/db/client";
 
 export async function addUserToClassroom(userId: string, classroomId: string, role: string) {
+    console.log(userId);
+    console.log(classroomId);
+    console.log(role);
     if(role == 'student') {
         const result = await prisma.studentsOnClassrooms.create({
             data: {

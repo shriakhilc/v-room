@@ -4,10 +4,11 @@ import React from "react";
 
 
 interface UserTableProps {
-    users: User[];
-    userRoles: string[];
-    classroom: Classroom;
-    router: NextRouter;
+    users: User[],
+    userRoles: string[],
+    currentUserRole: string,
+    classroom: Classroom,
+    router: NextRouter,
 } 
 
 class UserTable extends React.Component<UserTableProps, {selectedRole: string}> {
@@ -60,6 +61,14 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
         }
     }
 
+    displayRemoveButton(index: number) {
+        return this.props.currentUserRole == "instructor" && this.props.userRoles[index] != "None"
+    }
+
+    displayAddButton(index: number) {
+        return this.props.currentUserRole == "instructor" && this.props.userRoles[index] == "None"
+    }
+
     render() {
         return (
             <div className="flex flex-col">
@@ -109,14 +118,14 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
                                             {this.props.userRoles[index]}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {this.props.userRoles[index] != "None" &&
+                                            {this.displayRemoveButton(index) &&
                                                 <a onClick={() => this.removeUserFromClassroom(user, this.props.userRoles[index] as string)} href="#" className="text-red-600 hover:text-red-900">
                                                     Remove
                                                 </a>
                                             }   
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {this.props.userRoles[index] == "None" &&
+                                            {this.displayAddButton(index) &&
                                                 <div className="text-gray-900">
                                                     <a onClick={() => this.addUserToClassroom(user)} href="#" className="text-green-600 hover:text-green-900">
                                                         Add
