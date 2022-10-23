@@ -28,7 +28,10 @@
       ],
       "@/components/*": [
         "src/components/*"
-      ]
+      ],
+      "@/public/*": [
+        "src/public/*"
+      ],
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.mjs"],

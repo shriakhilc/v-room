@@ -1,28 +1,15 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router"
 import Head from "next/head";
-import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 
+const MeetingParticipant = dynamic(() => import('@/components/meeting_participant'), {
+    ssr: false,
+})
 const JoinMeeting: NextPage = () => {
 
     const { isReady, query } = useRouter();
-
-    useEffect(() => {
-        if (isReady) {
-            import('peerjs').then(({ default: Peer }) => {
-                const peer = new Peer();
-                peer.on('open', (id) => {
-                    if (typeof query.hostid === "string") {
-                        console.log("joining host" + query.hostid + " with id " + id)
-                        const conn = peer.connect(query.hostid);
-                        conn.on("open", () => {
-                            conn.send("hi!");
-                        });
-                    }
-                });
-            });
-        }
-    }, [isReady, query.hostid])
 
     return (
         <>
@@ -31,8 +18,9 @@ const JoinMeeting: NextPage = () => {
                 <meta name="description" content="In room" />
                 <link rel="icon" href="/favicon.svg" />
             </Head>
+            {isReady && typeof query.hostid === "string" && <MeetingParticipant hostid={query.hostid} />}
         </>
     )
-};
+}
 
 export default JoinMeeting;
