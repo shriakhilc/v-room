@@ -47,7 +47,7 @@ export async function removeUserFromClassroom(classroomId: string, userId: strin
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if(req.method == 'POST') {
         try {
-            const result = removeUserFromClassroom(req.body.classroomId, req.body.userId, req.body.role);
+            const result = await removeUserFromClassroom(req.body.classroomId, req.body.userId, req.body.role);
             res.status(200).json({result});
         } catch(e) {
             res.status(500).json({error: e});

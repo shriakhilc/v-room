@@ -32,7 +32,7 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
 
         <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
           <h1 className="text-lg leading-normal p-4">
-            <span className="text-red-500">Users for </span>
+            <span className="text-red-500">Users in {classroom.name}</span>
           </h1>
           <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom}></UserTable>
         </main>

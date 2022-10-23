@@ -1,3 +1,4 @@
+import { NotFoundError } from "@prisma/client/runtime";
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../server/db/client";
 
@@ -29,12 +30,16 @@ export async function addUserToClassroom(userId: string, classroomId: string, ro
         });
         return result;
     }
+    else {
+        console.log(role);
+        throw NotFoundError;
+    }
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if(req.method == 'POST') {
         try {
-            const result = addUserToClassroom(req.body.userId, req.body.classroomId, req.body.role);
+            const result = await addUserToClassroom(req.body.userId, req.body.classroomId, req.body.role);
             res.status(200).json({result});
         } catch(e) {
             res.status(500).json({error: e});

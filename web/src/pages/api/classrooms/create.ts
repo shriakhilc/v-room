@@ -14,7 +14,7 @@ export async function createClassroom(name:string, department:string, courseNumb
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if(req.method == 'POST') {
         try {
-            const result = createClassroom(req.body.name, req.body.department, req.body.courseNumber, req.body.crn);
+            const result = await createClassroom(req.body.name, req.body.department, req.body.courseNumber, req.body.crn);
             res.status(200).json({result});
         } catch(e) {
             res.status(500).json({error: e});

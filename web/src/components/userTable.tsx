@@ -8,24 +8,31 @@ interface UserTableProps {
     userRoles: string[];
     classroom: Classroom;
     router: NextRouter;
-}
+} 
 
-class UserTable extends React.Component<UserTableProps, {}> {
+class UserTable extends React.Component<UserTableProps, {selectedRole: string}> {
+    constructor(props: UserTableProps) {
+        super(props);
+        this.state = {
+            selectedRole: "student",
+        }
+    }
     
-    async addUserToClassroom(user: User, role:string) {
+    async addUserToClassroom(user: User) {
+        //TODO: Make this add with other than student
         const created = await fetch('../api/classrooms/users/add', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
             "userId": user.id,
             "classroomId": this.props.classroom.id,
-            "role": role.toLowerCase
+            "role": this.state.selectedRole
           })
         });
         const readable = await created.json();
         console.log(readable);
         if(created.status == 200) {
-            //this.props.router.replace(this.props.router.asPath);
+            this.props.router.replace(this.props.router.asPath);
         }
         else {
           console.log(created);
@@ -40,13 +47,13 @@ class UserTable extends React.Component<UserTableProps, {}> {
           body: JSON.stringify({
             "userId": user.id,
             "classroomId": this.props.classroom.id,
-            "role": role.toLowerCase
+            "role": role.toLowerCase()
           })
         });
         const readable = await removed.json();
         console.log(readable);
         if(removed.status == 200) {
-            //this.props.router.replace(this.props.router.asPath);
+            this.props.router.replace(this.props.router.asPath);
         }
         else {
           console.log(removed);
@@ -54,7 +61,6 @@ class UserTable extends React.Component<UserTableProps, {}> {
     }
 
     render() {
-        console.log(this.props.users);
         return (
             <div className="flex flex-col">
                 <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -111,9 +117,17 @@ class UserTable extends React.Component<UserTableProps, {}> {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             {this.props.userRoles[index] == "None" &&
-                                                <a onClick={() => this.addUserToClassroom(user, this.props.userRoles[index] as string)} href="#" className="text-green-600 hover:text-green-900">
-                                                    Add
-                                                </a>
+                                                <div className="text-gray-900">
+                                                    <a onClick={() => this.addUserToClassroom(user)} href="#" className="text-green-600 hover:text-green-900">
+                                                        Add
+                                                    </a>
+                                                    &nbsp;as&nbsp; 
+                                                    <select name="cars" id="cars" className="text-gray-900">
+                                                        <option value="student" onClick={() => { this.setState({selectedRole: "student"})}}>Student</option>
+                                                        <option value="assistant" onClick={() => { this.setState({selectedRole: "assistant"})}}>Assistant</option>
+                                                        <option value="instructor" onClick={() => { this.setState({selectedRole: "instructor"})}}>Instructor</option>
+                                                    </select>
+                                                </div>
                                             } 
                                         </td>
                                     </tr>
