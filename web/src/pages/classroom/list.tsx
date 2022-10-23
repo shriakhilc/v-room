@@ -95,7 +95,7 @@ function formCompleted() {
             <div className="relative bg-white rounded-lg shadow">
               <div className="flex justify-between items-start p-4 rounded-t border-b border-gray-600">
                   <h3 className="text-xl font-semibold text-gray-900">
-                      Terms of Service
+                      Create New Classroom
                   </h3>
               </div>
               <div className="p-6 space-y-6">
