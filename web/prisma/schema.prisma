@@ -19,13 +19,13 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+  scope             String? @db.Text
+  id_token          String? @db.Text
+  session_state     String? @db.Text
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -40,19 +40,16 @@ model Session {
 }
 
 model User {
-    id                     String                    @id @default(cuid())
-    name                   String?
-    email                  String?                   @unique
-    emailVerified          DateTime?
-    image                  String?
-    accounts               Account[]
-    sessions               Session[]
-    isRegistered           Boolean                   @default(false)
-    classroomsAsStudent    StudentsOnClassrooms[]
-    classroomsAsAssistant  AssistantsOnClassrooms[]
-    classroomsAsInstructor InstructorsOnClassrooms[]
-    pronoun                String?
-
+  id                     String                    @id @default(cuid())
+  name                   String?
+  email                  String?                   @unique
+  emailVerified          DateTime?
+  image                  String?
+  accounts               Account[]
+  sessions               Session[]
+  classroomsAsStudent    StudentsOnClassrooms[]
+  classroomsAsAssistant  AssistantsOnClassrooms[]
+  classroomsAsInstructor InstructorsOnClassrooms[]
 }
 
 model VerificationToken {
