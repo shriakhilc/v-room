@@ -17,6 +17,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         req.body=JSON.parse(req.body);
     }
 
+    console.log('wwwvvvv ',req.body);
     if(req.method == 'PUT') {
         try {
             const result = await updateUser(req.body.email,req.body.data);

@@ -8,6 +8,7 @@ const Home: NextPage = () => {
     await signIn('google', {
       callbackUrl: '/user/register',
     })
+    
   }
 
   const handleLogout = async () => {
@@ -28,9 +29,9 @@ const Home: NextPage = () => {
           {status!="authenticated" && (
             <a
               href="/api/auth/signin"
-              onClick={(e) => {
+              onClick={async(e) => {
                 e.preventDefault();
-                handleSignIn();
+               const res=await handleSignIn();
               }}
             >
               <button className="signInButton">Sign in</button>
@@ -38,7 +39,7 @@ const Home: NextPage = () => {
           )}
           {status=="authenticated" && (
             <>
-              <Link href="/profile">
+              <Link href="/user/profile">
                 <a>
                   <span
                     style={{ backgroundImage: `url(${data.user?.image})` }}
