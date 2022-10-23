@@ -1,7 +1,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from 'next/link';
-import { SessionProvider } from 'next-auth/react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 const Home: NextPage = () => {
   const handleSignIn = async () => {
@@ -15,7 +14,9 @@ const Home: NextPage = () => {
       callbackUrl: 'http://localhost:3000/',
     })
   }
+
   const { data, status } = useSession()
+  
   return (
     <>
       <Head>
@@ -23,6 +24,7 @@ const Home: NextPage = () => {
         <meta name="description" content="Reimagining Office Hours" />
         <link rel="icon" href="/favicon.svg" />
       </Head>
+
       <nav>
       <p>
           {status!="authenticated" && (
@@ -117,6 +119,7 @@ const Home: NextPage = () => {
           background-color: #555;
         }
       `}</style>
+      
       <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
         <h1 className="text-5xl font-extrabold leading-normal md:text-[5rem]">
           Welcome to <span className="text-red-500">V-Room</span>

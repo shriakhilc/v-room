@@ -4,7 +4,6 @@ import { loggerLink } from "@trpc/client/links/loggerLink";
 import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
 import AuthWrapper from '../components/AuthWrapper'
-import Home from './index'
 import superjson from "superjson";
 import type { AppType } from "next/app";
 import type { AppRouter } from "../server/router";
@@ -17,9 +16,8 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-       <AuthWrapper>
-        <Home />
-      <Component {...pageProps} />
+      <AuthWrapper>
+        <Component {...pageProps} />
       </AuthWrapper>
     </SessionProvider>
   );
