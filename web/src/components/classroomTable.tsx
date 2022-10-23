@@ -3,7 +3,8 @@ import Link from "next/link";
 import React from "react";
   
 interface ClassroomTableProps {
-    classrooms: Classroom[];
+    classrooms: Classroom[],
+    roles: string[]
 }
 
 class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
@@ -50,6 +51,12 @@ class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
                                             scope="col"
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                         >
+                                            Your Role
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
                                             Invite Code
                                         </th>
                                         <th scope="col" className="relative px-6 py-3">
@@ -61,7 +68,7 @@ class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {this.props.classrooms.map(classroom => (
+                                    {this.props.classrooms.map((classroom, index) => (
                                     <tr key={classroom.id}>
                                         <Link href={`/classroom/${classroom.id}`}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900 hover:text-blue-500 cursor-pointer">
@@ -85,19 +92,46 @@ class ClassroomTable extends React.Component<ClassroomTableProps, {}> {
                                                 {classroom.active ? 'Active' : 'Inactive'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {classroom.inviteCode}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="#" className="text-red-600 hover:text-red-900">
-                                                Delete
-                                            </a>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="#" className="text-red-600 hover:text-red-900">
-                                                Archive
-                                            </a>
-                                        </td>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
+                                            {this.props.roles[index]}
+                                        </th>
+                                        {this.props.roles[index] == "instructor" &&
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {classroom.inviteCode}
+                                            </td>
+                                        }
+                                        {this.props.roles[index] != "instructor" && 
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                Instructors only
+                                            </td>
+                                        }
+                                        {this.props.roles[index] == "instructor" &&
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <a href="#" className="text-red-600 hover:text-red-900">
+                                                    Delete
+                                                </a>
+                                            </td>
+                                        }
+                                        {this.props.roles[index] != "instructor" && 
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                Instructors only
+                                            </td>
+                                        }
+                                        {this.props.roles[index] == "instructor" &&
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <a href="#" className="text-red-600 hover:text-red-900">
+                                                    Archive
+                                                </a>
+                                            </td>
+                                        }
+                                        {this.props.roles[index] != "instructor" && 
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                Instructors only
+                                            </td>
+                                        }
                                     </tr>
                                     ))}
                                 </tbody>
