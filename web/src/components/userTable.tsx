@@ -74,7 +74,7 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
             <div className="flex flex-col">
                 <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="py-2 align-middle min-w-full sm:px-6 lg:px-8">
-                        <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem] min-h-[50rem]">
+                        <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem]">
                             <table className="min-w-full max-h-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>

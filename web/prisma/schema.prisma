@@ -74,27 +74,27 @@ model Classroom {
 }
 
 model StudentsOnClassrooms {
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  classroom   Classroom @relation(fields: [classroomId], references: [id])
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
 
   @@id([userId, classroomId])
 }
 
 model AssistantsOnClassrooms {
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  classroom   Classroom @relation(fields: [classroomId], references: [id])
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
 
   @@id([userId, classroomId])
 }
 
 model InstructorsOnClassrooms {
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  classroom   Classroom @relation(fields: [classroomId], references: [id])
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
 
   @@id([userId, classroomId])
