@@ -114,7 +114,7 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmai
           <link rel="icon" href="/favicon.svg" />
         </Head>
 
-        <Header></Header>
+        <Header session={data} status={status}></Header>
 
         {status == "authenticated" &&
           <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
