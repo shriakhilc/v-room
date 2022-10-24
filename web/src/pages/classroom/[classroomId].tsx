@@ -82,7 +82,8 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
           <link rel="icon" href="/favicon.svg" />
         </Head>
 
-        <Header></Header>
+        <Header session={session} status={status}></Header>
+        
         {status == "authenticated" && (
           <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
             <div className="flex flex-row">
