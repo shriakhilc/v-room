@@ -38,7 +38,7 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
         "archive": archive
       })
     });
-    
+
     if (removed.status == 200) {
       if (archive) {
         router.reload();
@@ -55,13 +55,13 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
   }
 
   let elevatedPrivileges = false;
-    allUsersSectioned.every((user, idx) => {
-      if (user.id == data?.user?.id && (userRoles[idx] == "Assistant" || "Instructor")) {
-        elevatedPrivileges = true;
-        return false;
-      }
-      return true;
-    });
+  allUsersSectioned.every((user, idx) => {
+    if (user.id == data?.user?.id && (userRoles[idx] == "Assistant" || "Instructor")) {
+      elevatedPrivileges = true;
+      return false;
+    }
+    return true;
+  });
 
   return (
     <>
