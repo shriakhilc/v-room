@@ -42,7 +42,7 @@ export default function MeetingHost() {
             <div className="">
                 <ParticipantStream peer={peer} peerid={peers[0]} localStream={localStream} call={call} />
                 <div className="absolute bottom-0 left-0">
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} />
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host/>
                 </div>
             </div>
             <p>Participants: </p>

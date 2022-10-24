@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; }) {
+export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; host?: boolean;}) {
     const [playing, setPlaying] = useState(false);
 
     const [localAudio, setLocalAudio] = useState(true);
@@ -23,6 +23,9 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
                     }
                 });
             setPlaying(true);
+            if (props.host) {
+                //TODO: if host, update classroom to show the peerid as an available meeting
+            }
         }
     };
 
@@ -31,6 +34,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
             props.localStream.getTracks().forEach((track) => track.stop())
             setPlaying(false);
         }
+        //TODO: if host, update classroom to remove peerid as a meeting
     };
 
     function toggleLocalAudio(stream: MediaStream | null, enabled?: boolean) {
@@ -65,7 +69,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
             <div className="btn-group btn-group-horizontal">
                 <button className={playing ? "btn btn-success" : "btn btn-error"}
                     onClick={playing ? stopStream : startStream}>
-                    {playing ? "stop" : "start"}
+                    {playing ? "end" : "start"}
                 </button>
                 <button className={localAudio ? "btn btn-success" : "btn btn-error"} onClick={() => toggleLocalAudio(props.localStream)}>
                     {localAudio ?

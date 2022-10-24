@@ -24,7 +24,7 @@ type PageProps = {
 
 const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, classroom, currentUserRole }) => {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data, status } = useSession();
 
   async function removeClassroom(archive: boolean) {
 
@@ -54,6 +54,15 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
     }
   }
 
+  let elevatedPrivileges = false;
+    allUsersSectioned.every((user, idx) => {
+      if (user.id == data?.user?.id && (userRoles[idx] == "Assistant" || "Instructor")) {
+        elevatedPrivileges = true;
+        return false;
+      }
+      return true;
+    });
+
   return (
     <>
       <div className="container mx-auto">
@@ -79,6 +88,7 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
               <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
             </div>
             <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
+            {elevatedPrivileges && <Link className="btn" href="/meeting/host">Host a meeting</Link>}
           </main>
         )
         }
