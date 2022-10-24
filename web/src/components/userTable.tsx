@@ -74,7 +74,7 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
             <div className="flex flex-col">
                 <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="py-2 align-middle min-w-full sm:px-6 lg:px-8">
-                        <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem] min-h-[50rem]">
+                        <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem]">
                             <table className="min-w-full max-h-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -114,7 +114,7 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {user.email}    
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-900 uppercase">
                                             {this.props.userRoles[index]}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -131,7 +131,7 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
                                                         Add
                                                     </a>
                                                     &nbsp;as&nbsp; 
-                                                    <select name="cars" id="cars" className="text-gray-900">
+                                                    <select name="roles" id="roles" className="text-gray-900">
                                                         <option value="student" onClick={() => { this.setState({selectedRole: "student"})}}>Student</option>
                                                         <option value="assistant" onClick={() => { this.setState({selectedRole: "assistant"})}}>Assistant</option>
                                                         <option value="instructor" onClick={() => { this.setState({selectedRole: "instructor"})}}>Instructor</option>
