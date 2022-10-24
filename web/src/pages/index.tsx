@@ -2,21 +2,10 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
+
 const Home: NextPage = () => {
-  const handleSignIn = async () => {
-    await signIn('google', {
-      callbackUrl: '/user/register',
-    })
-  }
-
-  const handleLogout = async () => {
-    await signOut({
-      callbackUrl: 'http://localhost:3000/',
-    })
-  }
-
   const { data, status } = useSession()
-  
+
   return (
     <>
       <Head>
@@ -26,38 +15,24 @@ const Home: NextPage = () => {
       </Head>
 
       <nav>
-      <p>
-          {status!="authenticated" && (
-            <Link
-              href="/api/auth/signin"
-              onClick={(e) => {
-                e.preventDefault();
-                handleSignIn();
-              }}
-            >
-              <button className="signInButton">Sign in</button>
-            </Link>
-          )}
-          {status=="authenticated" && (
-            <>
-              <Link href="/user/profile">
+        <p>
+          {status == "authenticated" ?
+            (
+              <>
+                <Link href="/user/profile">
                   <span
                     style={{ backgroundImage: `url(${data.user?.image})` }}
                     className="avatar"
                   />
-              </Link>
-              <span className="email">{data.user?.email}</span>
-              <Link
-                href="/api/auth/signout"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleLogout();
-                }}
-              >
-                <button className="signOutButton">Sign out</button>
-              </Link>
-            </>
-          )}
+                </Link>
+                <span className="email">{data.user?.email}</span>
+                <button onClick={() => signOut({ callbackUrl: '/' })} className="signOutButton">Sign out</button>
+              </>
+            ) :
+            (
+              <button onClick={() => signIn('google', { callbackUrl: '/user/register' })} className="signInButton">Sign in</button>
+            )
+          }
         </p>
       </nav>
 
@@ -117,7 +92,7 @@ const Home: NextPage = () => {
           background-color: #555;
         }
       `}</style>
-      
+
       <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
         <h1 className="text-5xl font-extrabold leading-normal md:text-[5rem]">
           Welcome to <span className="text-red-500">V-Room</span>

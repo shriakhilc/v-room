@@ -10,7 +10,7 @@ export const authOptions: NextAuthOptions = {
   // Include user.id on session
   callbacks: {
     session({ session, user }) {
-        session.user = user;
+      session.user = user;
       return session;
     },
   },
