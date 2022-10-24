@@ -13,23 +13,24 @@ const UserProfile: NextPage = () => {
   const [show, setShow] = React.useState(false);
   const [newName, setNewName] = React.useState(session?.user?.name ?? "");
   // TODO: Include pronoun or getUser
-  const [newPronoun, setNewPronoun] = React.useState("");
+  const [newPronoun, setNewPronoun] = React.useState(session?.user?.pronouns ?? "");
   const [error, setError] = React.useState(false);
 
   const handleSubmit = useCallback(async (e: any) => {
+    console.log(JSON.stringify(session));
     const created = await fetch('../api/user/update', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         data: {
           "name": newName,
-          "pronoun": newPronoun,
+          "pronouns": newPronoun,
         },
         userId: session?.user?.id,
       })
     });
     if (created.status == 200) {
-      alert('Registration Successful')
+      //alert('Registration Successful');
       router.push('/classroom/list');
     }
     else {
@@ -78,7 +79,7 @@ const UserProfile: NextPage = () => {
                 </div>
                 <div className="p-6 space-y-6">
                   <p className="text-base leading-relaxed text-gray-900">
-                    User Registration Information.
+                    User Profile Information.
                   </p>
                 </div>
                 <div className="pr-6 pl-6 pb-6">

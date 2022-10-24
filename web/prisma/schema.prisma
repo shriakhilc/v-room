@@ -69,7 +69,6 @@ model Classroom {
   instructors  InstructorsOnClassrooms[]
   inviteCode   String                    @default(cuid())
   active       Boolean                   @default(true)
-  meetings     String                    @default("")
 }
 
 model StudentsOnClassrooms {
