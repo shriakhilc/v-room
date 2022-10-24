@@ -1,6 +1,4 @@
-import { Classroom } from "@prisma/client";
-import Link from "next/link";
-import React, { useCallback } from "react";
+import React from "react";
 
 interface DropdownProps {
     onDeleteClassroom: () => void,
