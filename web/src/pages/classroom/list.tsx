@@ -77,7 +77,7 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmai
         userRoles.push("assistant");
       });
       classroomsJson.instructorClassrooms.forEach(() => {
-        userRoles.push("instructor");
+        userRoles.push();
       });
       const concatenatedClassrooms = classroomsJson.studentClassrooms.concat(classroomsJson.assistantClassrooms.concat(classroomsJson.instructorClassrooms));
       setClassrooms(concatenatedClassrooms);

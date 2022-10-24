@@ -24,12 +24,9 @@ type PageProps = {
 
 const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, classroom, currentUserRole }) => {
   const router = useRouter();
-  const { data, status } = useSession();
+  const { data: session, status } = useSession();
 
   async function removeClassroom(archive: boolean) {
-
-    // console.log(`session=${JSON.stringify(session)}`);
-
     const removed = await fetch('../api/classrooms/remove', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -56,7 +53,7 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
 
   let elevatedPrivileges = false;
   allUsersSectioned.every((user, idx) => {
-    if (user.id == data?.user?.id && (userRoles[idx] == "Assistant" || "Instructor")) {
+    if (user.id == session?.user?.id && (userRoles[idx] === "assistant" || userRoles[idx] === "instructor")) {
       elevatedPrivileges = true;
       return false;
     }
@@ -85,7 +82,9 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
                   {classroom.active ? 'Active' : 'Inactive'}
                 </span>
               </h1>
-              <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
+              {currentUserRole === "instructor" &&
+                <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
+              }
             </div>
             <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
             {elevatedPrivileges && <Link className="btn" href="/meeting/host">Host a meeting</Link>}
