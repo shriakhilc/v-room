@@ -3,7 +3,7 @@ import Head from "next/head";
 import Header from "../../components/header"
 import Footer from "../../components/footer"
 import type { Classroom, User } from '@prisma/client';
-import React from "react";
+import React, { useState } from "react";
 import UserTable from "@/src/components/userTable";
 import { getAllUsers } from "../api/user";
 import { useRouter } from 'next/router';
@@ -26,6 +26,7 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
   const router = useRouter();
   const { data: session, status } = useSession();
 
+  const [meetings, setMeetings] = useState([]);
   async function removeClassroom(archive: boolean) {
     const removed = await fetch('../api/classrooms/remove', {
       method: 'POST',
@@ -50,6 +51,18 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
       console.log(`detail ${removed.status}: ${JSON.stringify(await removed.json())}`);
     }
   }
+
+  async function getMeetings() {
+    fetch('../api/meetings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        "classroomId": classroom.id,
+        "get": true,
+      })
+    }).then(async response => setMeetings(await response.json()));
+  }
+  getMeetings();
 
   let elevatedPrivileges = false;
   allUsersSectioned.every((user, idx) => {
@@ -87,7 +100,13 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
               }
             </div>
             <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
-            {elevatedPrivileges && <Link className="btn" href="/meeting/host">Host a meeting</Link>}
+            {elevatedPrivileges ?
+              <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
+              : (meetings[0] ?
+                <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
+                : <p>No meetings</p>
+              )
+            }
           </main>
         )
         }

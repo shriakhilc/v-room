@@ -5,7 +5,7 @@ import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
 const peer = new Peer();
 
-export default function MeetingHost() {
+export default function MeetingHost(props: { classroomid: string; }) {
     const [peerid, setPeerid] = useState('')
     const [peers, setPeers] = useState<string[]>([]);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -42,7 +42,7 @@ export default function MeetingHost() {
             <div className="">
                 <ParticipantStream peer={peer} peerid={peers[0]} localStream={localStream} call={call} />
                 <div className="absolute bottom-0 left-0">
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host/>
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={peerid} />
                 </div>
             </div>
             <p>Participants: </p>

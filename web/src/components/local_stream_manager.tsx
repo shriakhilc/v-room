@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; host?: boolean;}) {
+export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; host?: boolean; classroomid?: string; peerid?: string; }) {
     const [playing, setPlaying] = useState(false);
 
     const [localAudio, setLocalAudio] = useState(true);
@@ -24,7 +24,15 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
                 });
             setPlaying(true);
             if (props.host) {
-                //TODO: if host, update classroom to show the peerid as an available meeting
+                fetch('../api/meetings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        "classroomId": props.classroomid,
+                        "meetingId": props.peerid,
+                        "add": true,
+                    })
+                });
             }
         }
     };
