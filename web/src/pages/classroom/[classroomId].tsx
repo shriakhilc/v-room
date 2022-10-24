@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { authOptions } from "../api/auth/[...nextauth]";
 import { unstable_getServerSession } from "next-auth";
+import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
 
 type PageProps = {
   allUsersSectioned: User[],
@@ -23,37 +24,38 @@ type PageProps = {
 
 const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, classroom, currentUserRole }) => {
   const router = useRouter();
-  const { data, status } = useSession();
-  console.log(status);
+  const { data: session, status } = useSession();
 
   async function removeClassroom(archive: boolean) {
+
+    // console.log(`session=${JSON.stringify(session)}`);
 
     const removed = await fetch('../api/classrooms/remove', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        // TODO: Get current user here https://next-auth.js.org/getting-started/example#frontend---add-react-hook
-        "userId": "cl9kw60af0000wvgser3vr9nb",
         "classroomId": classroom.id,
         "archive": archive
       })
     });
-
-    const readable = await removed.json();
-    console.log(`detail: ${readable}`);
-    // TODO: Show toast for success / fail beyond the redirect
+    
     if (removed.status == 200) {
-      //this.props.router.replace(this.props.router.asPath);
-      router.replace("/classroom/list");
+      if (archive) {
+        router.reload();
+      }
+      else {
+        // return to classrooms list since this detail page no longer exists
+        router.replace("/classroom/list");
+      }
     }
     else {
-      console.log(`detail non-200: ${removed}`);
+      // TODO: Show toast for success / fail beyond the redirect
+      console.log(`detail ${removed.status}: ${JSON.stringify(await removed.json())}`);
     }
   }
 
   return (
     <>
-
       <div className="container mx-auto">
         <Head>
           <title>{`${classroom.name} | V-Room`}</title>
@@ -64,18 +66,19 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
         <Header></Header>
         {status == "authenticated" && (
           <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
-            <h1 className="text-lg leading-normal p-4">
-              <span className="text-red-500">Users for </span>
-              <span>{classroom.name} </span>
-              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+            <div className="flex flex-row">
+              <h1 className="text-lg leading-normal p-4 flex-grow">
+                <span className="text-red-500">Users for </span>
+                <span>{classroom.name} </span>
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
               ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-              >
-                {classroom.active ? 'Active' : 'Inactive'}
-              </span>
-            </h1>
+                >
+                  {classroom.active ? 'Active' : 'Inactive'}
+                </span>
+              </h1>
+              <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
+            </div>
             <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
-            <button onClick={() => removeClassroom(false)} type="button" className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Delete Classroom</button>
-            <button onClick={() => removeClassroom(true)} type="button" className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Archive Classroom</button>
           </main>
         )
         }

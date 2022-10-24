@@ -11,8 +11,8 @@ class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
     render() {
         return (
             <div className="flex flex-col">
-                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="py-2 align-middle min-w-full sm:px-6 lg:px-8">
+                <div className="overflow-x-auto">
+                    <div className="align-middle min-w-full">
                         <div className="shadow border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem]">
                             <table className="min-w-full max-h-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -59,12 +59,6 @@ class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
                                         >
                                             Invite Code
                                         </th>
-                                        {/* <th scope="col" className="relative px-6 py-3">
-                                            <span className="sr-only">Delete</span>
-                                        </th>
-                                        <th scope="col" className="relative px-6 py-3">
-                                            <span className="sr-only">Archive</span>
-                                        </th> */}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -92,46 +86,14 @@ class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
                                                     {classroom.active ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            >
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">
                                                 {this.props.roles[index]}
-                                            </th>
-                                            {this.props.roles[index] == "instructor" &&
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {classroom.inviteCode}
-                                                </td>
-                                            }
-                                            {this.props.roles[index] != "instructor" &&
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    Instructors only
-                                                </td>
-                                            }
-                                            {this.props.roles[index] == "instructor" &&
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <a href="#" className="text-red-600 hover:text-red-900">
-                                                        Delete
-                                                    </a>
-                                                </td>
-                                            }
-                                            {this.props.roles[index] != "instructor" &&
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    Instructors only
-                                                </td>
-                                            }
-                                            {this.props.roles[index] == "instructor" &&
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <a href="#" className="text-red-600 hover:text-red-900">
-                                                        Archive
-                                                    </a>
-                                                </td>
-                                            }
-                                            {this.props.roles[index] != "instructor" &&
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    Instructors only
-                                                </td>
-                                            }
+                                            </td>
+
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {this.props.roles[index] == "instructor" ? classroom.inviteCode : "Instructors only"}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

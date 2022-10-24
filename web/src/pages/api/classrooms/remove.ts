@@ -1,12 +1,14 @@
-import { NotFoundError } from "@prisma/client/runtime";
 import { NextApiRequest, NextApiResponse } from "next";
+import { authOptions } from "../../api/auth/[...nextauth]";
+import { unstable_getServerSession } from "next-auth/next";
 import { prisma } from "../../../server/db/client";
+import { NotFoundError } from "@prisma/client/runtime";
 
 export async function removeClassroom(classroomId: string, userId: string, archive: boolean) {
-    // TODO: Look into using nextAuth session here instead of passing userId param https://next-auth.js.org/getting-started/example#backend---api-route
-    // TODO: Raise custom exception for unauthorized?
     // Ensures user has the authority to perform this operation
-    await prisma.instructorsOnClassrooms.findUniqueOrThrow({
+    console.log(`user=${userId}, class=${classroomId}, archive=${archive}`);
+
+    const matchingUser = await prisma.instructorsOnClassrooms.findUnique({
         where: {
             userId_classroomId: {
                 userId: userId,
@@ -14,6 +16,10 @@ export async function removeClassroom(classroomId: string, userId: string, archi
             },
         },
     });
+
+    if (matchingUser == null) {
+        throw new NotFoundError("User is not authorized to perform this action");
+    }
 
     if (archive) {
         const result = await prisma.classroom.update({
@@ -34,11 +40,25 @@ export async function removeClassroom(classroomId: string, userId: string, archi
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method == 'POST') {
+        const session = await unstable_getServerSession(req, res, authOptions);
+
+        console.log(`api/classrooms/remove: session=${JSON.stringify(session)}`);
+
+        if (session?.user?.id == null) {
+            res.status(401).json({ message: "You must be logged in." });
+            return;
+        }
+
         try {
-            const result = await removeClassroom(req.body.classroomId, req.body.userId, req.body.archive);
+            const result = await removeClassroom(req.body.classroomId, session.user.id, req.body.archive);
             res.status(200).json({ result });
         } catch (e) {
-            res.status(500).json({ error: e });
+            if (e instanceof NotFoundError) {
+                res.status(403).json({ error: e });
+            }
+            else {
+                res.status(500).json({ error: e });
+            }
         }
     }
 }
