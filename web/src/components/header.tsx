@@ -23,10 +23,16 @@ class Header extends React.Component<HeaderProps, unknown> {
                                 <Link href="/user/profile">
                                     <a className="flex flex-row">
                                         {this.props.session?.user?.image != null &&
-                                            (<img
-                                                src={this.props.session?.user?.image}
-                                                className="h-10 w-10 object-cover rounded-full overflow-hidden"
-                                            />)
+                                            (
+                                                <picture>
+                                                    <source srcSet={this.props.session?.user?.image} type="image/webp" />
+                                                    <img
+                                                        src={this.props.session?.user?.image}
+                                                        alt="User avatar"
+                                                        className="h-10 w-10 object-cover rounded-full overflow-hidden"
+                                                    />
+                                                </picture>
+                                            )
                                         }
                                         <span className="my-auto mx-1.5 text-md">{this.props.session?.user?.email}</span>
                                     </a>
