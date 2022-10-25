@@ -37,7 +37,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
         <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
             <p>{"Host ID: " + peerid}</p>
             <Link href={"/meeting/join?hostid=" + peerid}> join meeting data channel</Link>
-            <button className="btn" onClick={() => callParticipant(0)}>Start Call</button>
+            <button className="btn" onClick={() => callParticipant(0)}>Bring Student In</button>
             <br />
             <div className="">
                 <ParticipantStream peer={peer} peerid={peers[0]} localStream={localStream} call={call} />

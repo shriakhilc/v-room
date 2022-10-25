@@ -77,7 +77,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
             <div className="btn-group btn-group-horizontal">
                 <button className={playing ? "btn btn-success" : "btn btn-error"}
                     onClick={playing ? stopStream : startStream}>
-                    {playing ? "end" : "start"}
+                    {playing ? (props.host ? "end meeting" : "leave meeting") : (props.host ? "start meeting" : "join meeting")}
                 </button>
                 <button className={localAudio ? "btn btn-success" : "btn btn-error"} onClick={() => toggleLocalAudio(props.localStream)}>
                     {localAudio ?
