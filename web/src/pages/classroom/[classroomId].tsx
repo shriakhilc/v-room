@@ -12,6 +12,8 @@ import Footer from "@/src/components/footer"
 import UserTable from "@/src/components/userTable";
 import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
 import { UserRole } from "@prisma/client";
+import ReplyBox from "@/src/components/ReplyBox";
+import QuestionBox from "@/src/components/QuestionBox";
 
 const ClassroomDetail: NextPage = () => {
   const router = useRouter();
@@ -211,40 +213,51 @@ const ClassroomDetail: NextPage = () => {
           <link rel="icon" href="/favicon.svg" />
         </Head>
 
-        <Header session={session} status={sessionStatus}></Header>
+        <Header session={session} status={status}></Header>
+        
+        {status == "authenticated" && (
+          <main>
+            <section className="container mx-auto flex flex-col items-left p-4">
+              <QuestionBox></QuestionBox>
+            </section>
+            <section className="container mx-auto h-5/6 flex flex-col items-left p-4">
+              <div className="flex flex-row">
+                <h1 className="text-lg leading-normal p-4 flex-grow">
+                  <span className="text-red-500">Users for </span>
+                  <span>{classroom.name} </span>
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                  >
+                    {classroom.active ? 'Active' : 'Inactive'}
+                  </span>
+                </h1>
+                {currentUserRole == UserRole.INSTRUCTOR &&
+                  <ClassroomSettingsDropdown onArchiveClassroom={onArchiveClassroom} onDeleteClassroom={onDeleteClassroom}></ClassroomSettingsDropdown>
+                }
+              </div>
+              <UserTable
+                users={allUsersSectioned}
+                currentUserRole={currentUserRole}
+                onAddUser={addUserToClassroom}
+                onRemoveUser={removeUserFromClassroom}
+              ></UserTable>
 
-        <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
-          <div className="flex flex-row">
-            <h1 className="text-lg leading-normal p-4 flex-grow">
-              <span className="text-red-500">Users for </span>
-              <span>{classroom.name} </span>
-              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-            ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-              >
-                {classroom.active ? 'Active' : 'Inactive'}
-              </span>
-            </h1>
-            {currentUserRole == UserRole.INSTRUCTOR &&
-              <ClassroomSettingsDropdown onArchiveClassroom={onArchiveClassroom} onDeleteClassroom={onDeleteClassroom}></ClassroomSettingsDropdown>
-            }
-          </div>
-
-          <UserTable
-            users={allUsersSectioned}
-            currentUserRole={currentUserRole}
-            onAddUser={addUserToClassroom}
-            onRemoveUser={removeUserFromClassroom}
-          ></UserTable>
-
-          {/* TODO: better way to join and host meetings */}
-          {(currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
-            <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
-          )}
-          {/* {meetings[0] ?
-            <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
-            : <p>No meetings</p>
-          } */}
-        </main>
+              {/* TODO: better way to join and host meetings */}
+              {(currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
+                <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
+              )}
+              {/* {meetings[0] ?
+                <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
+                : <p>No meetings</p>
+              } */}
+            </section>
+          </main>
+        )}
+        {status != "authenticated" &&
+          <main className="max-h-[50rem] min-h-[50rem]">
+            It seems you aren&apos;t logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.
+          </main>
+        }
         <Footer></Footer>
       </div>
     </>
