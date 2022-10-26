@@ -14,6 +14,8 @@ import Link from "next/link";
 import { authOptions } from "../api/auth/[...nextauth]";
 import { unstable_getServerSession } from "next-auth";
 import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
+import ReplyBox from "@/src/components/ReplyBox";
+import QuestionBox from "@/src/components/QuestionBox";
 
 type PageProps = {
   allUsersSectioned: User[],
@@ -85,29 +87,34 @@ const ClassroomDetail: NextPage<PageProps> = ({ allUsersSectioned, userRoles, cl
         <Header session={session} status={status}></Header>
         
         {status == "authenticated" && (
-          <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
-            <div className="flex flex-row">
-              <h1 className="text-lg leading-normal p-4 flex-grow">
-                <span className="text-red-500">Users for </span>
-                <span>{classroom.name} </span>
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-              ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-                >
-                  {classroom.active ? 'Active' : 'Inactive'}
-                </span>
-              </h1>
-              {currentUserRole === "instructor" &&
-                <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
+          <main>
+            <section className="container mx-auto flex flex-col items-left p-4">
+              <QuestionBox></QuestionBox>
+            </section>
+            <section className="container mx-auto h-5/6 flex flex-col items-left p-4">
+              <div className="flex flex-row">
+                <h1 className="text-lg leading-normal p-4 flex-grow">
+                  <span className="text-red-500">Users for </span>
+                  <span>{classroom.name} </span>
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                  >
+                    {classroom.active ? 'Active' : 'Inactive'}
+                  </span>
+                </h1>
+                {currentUserRole === "instructor" &&
+                  <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
+                }
+              </div>
+              <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
+              {elevatedPrivileges ?
+                <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
+                : (meetings[0] ?
+                  <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
+                  : <p>No meetings</p>
+                )
               }
-            </div>
-            <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
-            {elevatedPrivileges ?
-              <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
-              : (meetings[0] ?
-                <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
-                : <p>No meetings</p>
-              )
-            }
+            </section>
           </main>
         )
         }
