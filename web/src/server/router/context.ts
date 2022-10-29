@@ -45,10 +45,14 @@ export const createRouter = () => trpc.router<Context>();
  * Creates a tRPC router that asserts all queries and mutations are from an authorized user. Will throw an unauthorized error if a user is not signed in.
  **/
 export function createProtectedRouter() {
-  return createRouter().middleware(({ ctx, next }) => {
+  return createRouter().middleware(async ({ ctx, next }) => {
     if (!ctx.session || !ctx.session.user) {
-      throw new trpc.TRPCError({ code: "UNAUTHORIZED" });
+      throw new trpc.TRPCError({
+        code: "UNAUTHORIZED",
+        message: "This operation requires user to be authenticated",
+      });
     }
+
     return next({
       ctx: {
         ...ctx,
