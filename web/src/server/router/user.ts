@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
-import { createRouter } from "./context";
+import { createRouter, createProtectedRouter } from "./context";
 
 const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
     id: true,
@@ -46,11 +46,64 @@ const publicRoutes = createRouter()
             }
             return user;
         },
+    })
+    .query('getClassrooms', {
+        input: z.object({
+            id: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const results = await prisma.user.findUnique({
+                where: { id: input.id },
+                select: {
+                    classrooms: {
+                        select: {
+                            classroom: true,
+                            role: true
+                        }
+                    }
+                }
+            });
+
+            if (results == null) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: `No user with id '${input.id}'`,
+                });
+            }
+
+            return results.classrooms;
+        },
     });
+
+
 
 // Endpoints that need to authenticate current user
 // ctx.session and ctx.session.user are already validated to be non-null
-// const authRoutes = createProtectedRouter();
+const authRoutes = createProtectedRouter()
+    .mutation('update', {
+        input: z.object({
+            id: z.string().cuid(),
+            data: z.object({
+                name: z.string(),
+                pronouns: z.string(),
+            }),
+        }),
+        async resolve({ input, ctx }) {
+            // User can only update own data
+            if (ctx.session.user.id != input.id) {
+                throw new TRPCError({
+                    code: 'FORBIDDEN',
+                    message: `User ${ctx.session.user.email} is not authorized to update User ${input.id}`
+                });
+            }
+
+            await prisma.user.update({
+                where: { id: input.id },
+                data: input.data,
+                select: { id: true },
+            });
+        },
+    });
 
 // Combine all routes for this model
-export const userRouter = publicRoutes;
+export const userRouter = publicRoutes.merge(authRoutes);

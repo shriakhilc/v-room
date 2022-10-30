@@ -59,6 +59,77 @@ const publicRoutes = createRouter()
             }
             return classroom;
         },
+    })
+    .query('enrolledUsers', {
+        input: z.object({
+            id: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const result = await prisma.userOnClassroom.findMany({
+                where: { classroomId: input.id },
+                select: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                        }
+                    },
+                    role: true,
+                },
+            });
+            return result;
+        },
+    })
+    .query('unenrolledUsers', {
+        input: z.object({
+            id: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const result = await prisma.user.findMany({
+                where: { classrooms: { none: { classroomId: input.id } } },
+                select: { id: true, name: true, email: true },
+            });
+            return result;
+        },
+    })
+    // TODO: ideally use above APIs to split up the calls after UI improvements
+    // maybe not show all unenrolled users in table, and only use them for auto-completion.
+    .query('sectionedUsers', {
+        input: z.object({
+            classroomId: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const enrolled = await prisma.userOnClassroom.findMany({
+                where: { classroomId: input.classroomId },
+                select: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                        }
+                    },
+                    role: true,
+                },
+            });
+
+            const unenrolled = await prisma.user.findMany({
+                where: {
+                    classrooms: {
+                        none: {
+                            classroomId: input.classroomId
+                        }
+                    }
+                },
+                select: { id: true, name: true, email: true, },
+            });
+
+            return {
+                enrolled: enrolled,
+                unenrolled: unenrolled,
+            };
+        },
     });
 
 // Endpoints that need to authenticate user
@@ -93,6 +164,7 @@ const authRoutes = createProtectedRouter()
                         classroomId: input.classroomId,
                     },
                 },
+                select: { role: true }
             });
 
             if (userMatch != null &&
@@ -128,6 +200,7 @@ const authRoutes = createProtectedRouter()
                         classroomId: input.classroomId,
                     },
                 },
+                select: { role: true }
             });
 
             if (userMatch != null &&
@@ -164,6 +237,7 @@ const authRoutes = createProtectedRouter()
                         classroomId: input.id,
                     },
                 },
+                select: { role: true }
             });
 
             if (userMatch != null && userMatch.role == UserRole.INSTRUCTOR) {
@@ -197,6 +271,7 @@ const authRoutes = createProtectedRouter()
                         classroomId: id,
                     },
                 },
+                select: { role: true }
             });
 
             if (userMatch != null && userMatch.role == UserRole.INSTRUCTOR) {
