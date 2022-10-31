@@ -36,17 +36,14 @@ model Session {
 }
 
 model User {
-  id            String            @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String?
   pronouns      String?
-  email         String?           @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
-  classrooms    UserOnClassroom[]
-  Question      Question[]
-  Answer        Answer[]
 }
 
 model VerificationToken {
@@ -73,7 +70,6 @@ model Classroom {
 model UserOnClassroom {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
   role        UserRole  @default(STUDENT)
 
