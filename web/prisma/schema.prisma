@@ -14,13 +14,13 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
-  scope             String? @db.Text
-  id_token          String? @db.Text
-  session_state     String? @db.Text
+  scope             String?
+  id_token          String?
+  session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -110,4 +110,29 @@ enum UserRole {
   STUDENT
   ASSISTANT
   INSTRUCTOR
+}
+
+model Question {
+  questionId  String     @id @default(cuid())
+  questionStr String
+  classroom   Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroomId String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  response    Response[] 
+  @@fulltext([questionStr])
+}
+
+model Response {
+  responseId  String   @id @default(cuid())
+  responseStr String
+  question    Question @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
+  questionId  String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@fulltext([responseStr])
 }
