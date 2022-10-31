@@ -213,9 +213,9 @@ const ClassroomDetail: NextPage = () => {
           <link rel="icon" href="/favicon.svg" />
         </Head>
 
-        <Header session={session} status={status}></Header>
+        <Header session={session} status={sessionStatus}></Header>
         
-        {status == "authenticated" && (
+        {sessionStatus == "authenticated" && (
           <main>
             <section className="container mx-auto flex flex-col items-left p-4">
               <QuestionBox></QuestionBox>
@@ -253,7 +253,7 @@ const ClassroomDetail: NextPage = () => {
             </section>
           </main>
         )}
-        {status != "authenticated" &&
+        {sessionStatus != "authenticated" &&
           <main className="max-h-[50rem] min-h-[50rem]">
             It seems you aren&apos;t logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.
           </main>
