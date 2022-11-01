@@ -1,10 +1,10 @@
-import { Classroom } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import Link from "next/link";
 import React from "react";
+import { inferQueryOutput } from "../utils/trpc";
 
 interface ClassroomTableProps {
-    classrooms: Classroom[],
-    roles: string[]
+    classrooms: inferQueryOutput<'user.getClassrooms'>,
 }
 
 class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
@@ -62,7 +62,7 @@ class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {this.props.classrooms.map((classroom, index) => (
+                                    {this.props.classrooms.map(({ classroom, role }) => (
                                         <tr key={classroom.id}>
                                             <Link href={`/classroom/${classroom.id}`}>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900 hover:text-blue-500 cursor-pointer">
@@ -88,11 +88,11 @@ class ClassroomTable extends React.Component<ClassroomTableProps, unknown> {
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">
-                                                {this.props.roles[index]}
+                                                {role}
                                             </td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {this.props.roles[index] == "instructor" ? classroom.inviteCode : "Instructors only"}
+                                                {role == UserRole.INSTRUCTOR ? classroom.inviteCode : "Instructors only"}
                                             </td>
                                         </tr>
                                     ))}

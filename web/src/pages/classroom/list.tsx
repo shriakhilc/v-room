@@ -1,100 +1,85 @@
-import type { GetServerSidePropsContext, NextPage } from "next";
+import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "../../components/header"
 import Footer from "../../components/footer"
-import { getAllClassrooms } from "../api/classrooms";
 import ClassroomTable from "@/src/components/classroomTable";
-import type { Classroom } from '@prisma/client';
-import React from "react";
+import { useCallback, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { authOptions } from "../api/auth/[...nextauth]";
-import { unstable_getServerSession } from "next-auth";
-import { getUserByEmail } from "../api/user/[userId]";
-import { getClassroomsForUser } from "../api/classrooms/users/[userId]";
+import { trpc, inferQueryOutput } from '@/src/utils/trpc';
+import { UserRole } from "@prisma/client";
 
-type PageProps = {
-  classroomData: Classroom[],
-  userRoles: string[],
-  userEmail: string
-}
+const ClassroomList: NextPage = () => {
+  const { data: session, status: sessionStatus } = useSession();
+  const [classrooms, setClassrooms] = useState<inferQueryOutput<'user.getClassrooms'>>([]);
 
-const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmail }) => {
-  const [classrooms, setClassrooms] = React.useState(classroomData);
-  const [show, setShow] = React.useState(false);
-  const [newName, setNewName] = React.useState("");
-  const [newDept, setNewDept] = React.useState("");
-  const [newCourseNumber, setNewCourseNumber] = React.useState("");
-  const [newCrn, setNewCrn] = React.useState("");
-  const [error, setError] = React.useState(false);
-  const [roles, setRoles] = React.useState(userRoles);
-  const { data, status } = useSession();
+  const [newName, setNewName] = useState("");
+  const [newDept, setNewDept] = useState("");
+  const [newCourseNumber, setNewCourseNumber] = useState("");
+  const [newCrn, setNewCrn] = useState("");
 
-  async function addClassroom() {
-    const created = await fetch('../api/classrooms/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        "name": newName,
-        "department": newDept,
-        "courseNumber": parseInt(newCourseNumber, 10),
-        "crn": parseInt(newCrn, 10)
-      })
-    });
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState(false);
 
-    if (created.status == 200) {
-      const newClassroom = await created.json();
-      const user = await fetch('../api/user/12345', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: data?.user?.email
-        })
-      });
-      const userJson = await user.json();
+  const utils = trpc.useContext();
 
-      const newRelation = await fetch('../api/classrooms/users/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userJson.user.id,
-          classroomId: newClassroom.result.id,
-          role: 'instructor'
-        })
-      });
+  // query won't get called unless condition in 'enabled' is true
+  // TODO: Find correct way to handle type-safety without using non-null assertion (!)
+  trpc.useQuery(
+    ['user.getClassrooms', { id: session!.user!.id }],
+    {
+      enabled: (session != null && session.user != undefined),
+      onSuccess(data) {
+        setClassrooms(data);
+      },
 
-      const updatedClassrooms = await fetch('../api/classrooms/users/' + userJson.user.id, {
-        method: 'GET'
-      });
-      const classroomsJson = await updatedClassrooms.json();
-      console.log(classroomsJson);
-
-      const userRoles: string[] = [];
-      classroomsJson.studentClassrooms.forEach(() => {
-        userRoles.push("student");
-      });
-      classroomsJson.assistantClassrooms.forEach(() => {
-        userRoles.push("assistant");
-      });
-      classroomsJson.instructorClassrooms.forEach(() => {
-        userRoles.push();
-      });
-      const concatenatedClassrooms = classroomsJson.studentClassrooms.concat(classroomsJson.assistantClassrooms.concat(classroomsJson.instructorClassrooms));
-      setClassrooms(concatenatedClassrooms);
-      setRoles(userRoles);
-      console.log(userRoles);
-      setNewName("");
-      setNewCourseNumber("");
-      setNewCrn("");
-      setNewDept("");
-
+      onError(err) {
+        // Only happens if user doesn't exist, which shouldn't occur due to session validation
+        console.log(`pages/classroom/list: ERROR: ${err}`);
+      },
     }
-    else {
-      setError(true);
-      console.log(created);
-    }
+  );
 
-  }
+  const addClassroom = trpc.useMutation('classroom.add');
+
+  const onAddClassroom = useCallback(
+    async () => {
+      if (session == null || session.user == undefined) {
+        // This shouldn't happen normally, but explicit condition ensures type-safety
+        console.log('pages/classroom/list: ERROR: session.user not available to add as instructor');
+        return;
+      }
+
+      await addClassroom.mutateAsync(
+        {
+          name: newName,
+          department: newDept,
+          courseNumber: parseInt(newCourseNumber, 10),
+          crn: parseInt(newCrn, 10),
+          userId: session.user.id
+        },
+        {
+          async onSuccess() {
+            utils.invalidateQueries(['user.getClassrooms']);
+
+            // reset form fields
+            setNewName("");
+            setNewCourseNumber("");
+            setNewCrn("");
+            setNewDept("");
+
+            setShow(false);
+          },
+          onError(error) {
+            // Shouldn't be possible
+            console.log(`pages/classroom/list: ERROR: ${error}`);
+            setError(true);
+          },
+        }
+      );
+    },
+    [session, newName, , newDept, newCourseNumber, newCrn, utils, addClassroom],
+  );
 
   function showModal() {
     setShow(true);
@@ -104,24 +89,25 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmai
     return newName == "" || newDept == "" || newCourseNumber == "" || newCrn == "";
   }
 
-
   return (
     <>
       <div className="container mx-auto">
         <Head>
-          <title>V-Room</title>
+          <title>Classrooms | V-Room</title>
           <meta name="description" content="Reimagining Office Hours" />
           <link rel="icon" href="/favicon.svg" />
         </Head>
 
-        <Header session={data} status={status}></Header>
+        <Header session={session} status={sessionStatus}></Header>
 
-        {status == "authenticated" &&
+        {sessionStatus == "authenticated" ?
           <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
             <h1 className="text-lg leading-normal p-4">
               <span className="text-red-500">Your Classrooms</span>
             </h1>
-            <ClassroomTable classrooms={classrooms} roles={roles}></ClassroomTable>
+
+            <ClassroomTable classrooms={classrooms}></ClassroomTable>
+
             <button onClick={showModal} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Add Classroom</button>
             {show &&
               <div
@@ -159,56 +145,32 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmai
                     <input value={newCrn} onChange={e => setNewCrn(e.target.value.replace(/\D/, ''))} type="text" name="crn" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="12345"></input>
                   </div>
                   <div className="flex items-center p-6 space-x-2 rounded-b border-t border-gray-600">
-                    <button disabled={formCompleted()} onClick={() => { addClassroom(); setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Create Classroom</button>
+                    <button disabled={formCompleted()} onClick={onAddClassroom} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Create Classroom</button>
                     <button onClick={() => { setShow(false); setError(false) }} type="button" className="focus:ring-4 focus:outline-none rounded-lg border text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 bg-gray-700 text-gray-300 border-gray-500 hover:text-white hover:bg-gray-600 focus:ring-gray-600">Close</button>
                   </div>
                   {error &&
                     <div>
                       Error creating classroom.
-                    </div>}
+                    </div>
+                  }
                 </div>
-              </div>}
-          </main>}
-
-        {status != "authenticated" &&
+              </div>
+            }
+          </main>
+          :
           <main className="max-h-[50rem] min-h-[50rem]">
-            It seems you aren&apos;t logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.
+            {sessionStatus == "unauthenticated" ?
+              <span>It seems you aren&apos;t logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.</span>
+              :
+              <span>Loading...</span>
+            }
           </main>
         }
+
         <Footer></Footer>
-      </div>
+      </div >
     </>
   );
 };
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-
-  const session = await unstable_getServerSession(
-    context.req,
-    context.res,
-    authOptions);
-  if (session) {
-    const user = await getUserByEmail(session.user?.email);
-    if (user) {
-      const classrooms = await getClassroomsForUser(user.id);
-      const userRoles: string[] = [];
-      classrooms.studentClassrooms.forEach((element) => {
-        userRoles.push("student");
-      });
-      classrooms.assistantClassrooms.forEach((element) => {
-        userRoles.push("assistant");
-      });
-      classrooms.instructorClassrooms.forEach((element) => {
-        userRoles.push("instructor");
-      });
-      const concatenatedClassrooms = classrooms.studentClassrooms.concat(classrooms.assistantClassrooms.concat(classrooms.instructorClassrooms));
-      return { props: { classroomData: concatenatedClassrooms, userRoles: userRoles, userId: session.user?.email } };
-    }
-  }
-  else {
-    return { props: { classroomData: [], userRoles: [] } };
-  }
-
-}
 
 export default ClassroomList;
