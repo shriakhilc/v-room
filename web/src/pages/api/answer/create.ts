@@ -2,6 +2,7 @@ import { NextApiRequest,NextApiResponse } from "next";
 import { prisma } from "../../../server/db/client";
 
 export async function createAnswer(answerStr:any, questionId:any, userId: any) {
+    try {
         const result = await prisma.answer.create({data:{
             answerStr,
             questionId,
@@ -11,6 +12,10 @@ export async function createAnswer(answerStr:any, questionId:any, userId: any) {
         }
     });
         return result;
+    } catch (error) {
+        console.log("asdasad" ,error);
+    }
+       
    
 }
 
