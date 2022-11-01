@@ -67,10 +67,7 @@ model Classroom {
   meetings     String            @default("")
   inviteCode   String            @unique @default(cuid())
   active       Boolean           @default(true)
-<<<<<<< HEAD
   Question     Question[]
-=======
->>>>>>> a8fc0f8 (sync prisma schema)
 }
 
 model UserOnClassroom {
@@ -83,7 +80,6 @@ model UserOnClassroom {
   @@id([userId, classroomId])
 }
 
-<<<<<<< HEAD
 model Question {
   questionId  String    @id @default(cuid())
   questionStr String    @db.Text
@@ -111,8 +107,6 @@ model Answer {
   @@fulltext([answerStr])
 }
 
-=======
->>>>>>> a8fc0f8 (sync prisma schema)
 enum UserRole {
   STUDENT
   ASSISTANT

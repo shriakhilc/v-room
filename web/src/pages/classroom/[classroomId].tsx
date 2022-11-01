@@ -1,11 +1,11 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from 'next/router';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
-import { trpc, inferQueryOutput } from '@/src/utils/trpc';
+import { trpc } from '@/src/utils/trpc';
 
 import Header from "@/src/components/header"
 import Footer from "@/src/components/footer"
@@ -18,21 +18,25 @@ const ClassroomDetail: NextPage = () => {
   const classroomId = router.query.classroomId as string;
 
   const { data: session, status: sessionStatus } = useSession();
-  const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }]);
 
-  const [allUsersSectioned, setSectionedUsers] = useState<inferQueryOutput<"classroom.sectionedUsers">>({ enrolled: [], unenrolled: [] });
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>();
-
-  trpc.useQuery(
-    ['classroom.sectionedUsers', { classroomId: classroomId }],
+  const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
       enabled: session?.user?.id != undefined,
-      onSuccess(data) {
-        setCurrentUserRole(data.enrolled.find(x => x.user.id == session?.user?.id)?.role);
-        setSectionedUsers(data);
-      },
     }
   );
+
+  const { data: allUsersSectioned, status: userStatus } = trpc.useQuery(
+    ['classroom.sectionedUsers', { classroomId: classroomId }],
+    {
+      enabled: classroomStatus == "success" && classroom != undefined,
+    }
+  );
+
+  const currentUserRole = useMemo(
+    () => allUsersSectioned?.enrolled.find(x => x.user.id == session?.user?.id)?.role,
+    [allUsersSectioned, session]
+  );
+
 
   const deleteClassroom = trpc.useMutation('classroom.delete');
   const archiveClassroom = trpc.useMutation('classroom.archive');
@@ -104,19 +108,19 @@ const ClassroomDetail: NextPage = () => {
     });
   }
 
-  const [meetings, setMeetings] = useState([]);
-  async function getMeetings() {
-    fetch('../api/meetings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        "classroomId": classroomId,
-        "get": true,
-      })
-    }).then(async response => setMeetings(await response.json()));
-  }
+  // const [meetings, setMeetings] = useState([]);
+  // async function getMeetings() {
+  //   fetch('../api/meetings', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({
+  //       "classroomId": classroomId,
+  //       "get": true,
+  //     })
+  //   }).then(async response => setMeetings(await response.json()));
+  // }
   // TODO: this needs to be a subscription or some kind of polling, so it updates when someone else hosts a meeting
-  getMeetings();
+  //getMeetings();
 
 
   if (sessionStatus != "authenticated") {
@@ -142,7 +146,24 @@ const ClassroomDetail: NextPage = () => {
     );
   }
 
-  if (classroomStatus != "success") {
+  if (classroom == undefined) {
+    return (
+      <>
+        <div className="container mx-auto">
+          <Head>
+            <title>V-Room</title>
+            <meta name="description" content="Reimagining Office Hours" />
+            <link rel="icon" href="/favicon.svg" />
+          </Head>
+          <Header></Header>
+          <main className="max-h-[50rem] min-h-[50rem]">Could not find classroom.</main>
+          <Footer></Footer>
+        </div>
+      </>
+    );
+  }
+
+  if (allUsersSectioned == undefined) {
     return (
       <>
         <div className="container mx-auto">
@@ -153,17 +174,14 @@ const ClassroomDetail: NextPage = () => {
           </Head>
           <Header></Header>
           <main className="max-h-[50rem] min-h-[50rem]">
-            {classroomStatus == "error" ?
-              <>Could not find classroom.</>
-              :
-              <>Loading...</>
-            }
+            Users undefined.
           </main>
           <Footer></Footer>
         </div>
       </>
     );
   }
+
 
   if (currentUserRole == undefined) {
     return (
@@ -201,7 +219,7 @@ const ClassroomDetail: NextPage = () => {
               <span className="text-red-500">Users for </span>
               <span>{classroom.name} </span>
               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-              ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+            ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
               >
                 {classroom.active ? 'Active' : 'Inactive'}
               </span>
@@ -222,10 +240,10 @@ const ClassroomDetail: NextPage = () => {
           {(currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
             <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
           )}
-          {meetings[0] ?
+          {/* {meetings[0] ?
             <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
             : <p>No meetings</p>
-          }
+          } */}
         </main>
         <Footer></Footer>
       </div>
