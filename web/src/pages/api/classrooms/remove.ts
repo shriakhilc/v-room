@@ -3,17 +3,17 @@ import { authOptions } from "../../api/auth/[...nextauth]";
 import { unstable_getServerSession } from "next-auth/next";
 import { prisma } from "../../../server/db/client";
 import { NotFoundError } from "@prisma/client/runtime";
+import { UserRole } from "@prisma/client";
 
 export async function removeClassroom(classroomId: string, userId: string, archive: boolean) {
     // Ensures user has the authority to perform this operation
     console.log(`user=${userId}, class=${classroomId}, archive=${archive}`);
 
-    const matchingUser = await prisma.instructorsOnClassrooms.findUnique({
+    const matchingUser = await prisma.userOnClassroom.findFirst({
         where: {
-            userId_classroomId: {
-                userId: userId,
-                classroomId: classroomId,
-            },
+            userId: userId,
+            classroomId: classroomId,
+            role: UserRole.INSTRUCTOR
         },
     });
 

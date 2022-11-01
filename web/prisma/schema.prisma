@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["referentialIntegrity"]
+  previewFeatures = ["referentialIntegrity", "fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -36,17 +36,17 @@ model Session {
 }
 
 model User {
-  id                     String                    @id @default(cuid())
-  name                   String?
-  pronouns               String?
-  email                  String?                   @unique
-  emailVerified          DateTime?
-  image                  String?
-  accounts               Account[]
-  sessions               Session[]
-  classroomsAsStudent    StudentsOnClassrooms[]
-  classroomsAsAssistant  AssistantsOnClassrooms[]
-  classroomsAsInstructor InstructorsOnClassrooms[]
+  id            String            @id @default(cuid())
+  name          String?
+  pronouns      String?
+  email         String?           @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  classrooms    UserOnClassroom[]
+  Question      Question[]
+  Response      Response[]
 }
 
 model VerificationToken {
@@ -58,42 +58,57 @@ model VerificationToken {
 }
 
 model Classroom {
-  id           String                    @id @default(cuid())
+  id           String            @id @default(cuid())
   name         String
   department   String
-  courseNumber Int                       @unique
-  crn          Int                       @unique
-  students     StudentsOnClassrooms[]
-  assistants   AssistantsOnClassrooms[]
-  meetings     String                    @default("")
-  instructors  InstructorsOnClassrooms[]
-  inviteCode   String                    @default(cuid())
-  active       Boolean                   @default(true)
+  courseNumber Int               @unique
+  crn          Int               @unique
+  users        UserOnClassroom[]
+  meetings     String            @default("")
+  inviteCode   String            @unique @default(cuid())
+  active       Boolean           @default(true)
+  Question     Question[]
 }
 
-model StudentsOnClassrooms {
+model UserOnClassroom {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
+  role        UserRole  @default(STUDENT)
 
   @@id([userId, classroomId])
 }
 
-model AssistantsOnClassrooms {
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+model Question {
+  questionId  String     @id @default(cuid())
+  questionStr String     @db.Text
+  classroom   Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  response    Response[]
 
-  @@id([userId, classroomId])
+  @@fulltext([questionStr])
 }
 
-model InstructorsOnClassrooms {
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Response {
+  responseId  String   @id @default(cuid())
+  responseStr String   @db.Text
+  question    Question @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
+  questionId  String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  classroomId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@id([userId, classroomId])
+  @@fulltext([responseStr])
+}
+
+enum UserRole {
+  STUDENT
+  ASSISTANT
+  INSTRUCTOR
 }

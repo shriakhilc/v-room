@@ -5,7 +5,7 @@ import { prisma } from "../../../../server/db/client";
 export async function removeUserFromClassroom(classroomId: string, userId: string, role:string) {
     if(role == 'student') {
         console.log("role is student")
-        const result = await prisma.studentsOnClassrooms.delete({
+        const result = await prisma.userOnClassroom.delete({
             where: {
                 userId_classroomId: {
                     userId: userId,
@@ -17,7 +17,7 @@ export async function removeUserFromClassroom(classroomId: string, userId: strin
     }
     else if(role == 'assistant') {
         console.log("role is assistant");
-        const result = await prisma.assistantsOnClassrooms.delete({
+        const result = await prisma.userOnClassroom.delete({
             where: {
                 userId_classroomId: {
                     userId: userId,
@@ -29,7 +29,7 @@ export async function removeUserFromClassroom(classroomId: string, userId: strin
     }
     else if(role == 'instructor') {
         console.log("role is instructor");
-        const result = await prisma.instructorsOnClassrooms.delete({
+        const result = await prisma.userOnClassroom.delete({
             where: {
                 userId_classroomId: {
                     userId: userId,

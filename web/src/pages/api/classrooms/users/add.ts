@@ -1,34 +1,38 @@
 import { NotFoundError } from "@prisma/client/runtime";
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../server/db/client";
+import { UserRole } from "@prisma/client";
 
 export async function addUserToClassroom(userId: string, classroomId: string, role: string) {
     console.log(userId);
     console.log(classroomId);
     console.log(role);
     if(role == 'student') {
-        const result = await prisma.studentsOnClassrooms.create({
+        const result = await prisma.userOnClassroom.create({
             data: {
                 userId: userId,
                 classroomId: classroomId,
+                role: UserRole.STUDENT
             }
         });
         return result;
     }
     else if(role == 'assistant') {
-        const result = await prisma.assistantsOnClassrooms.create({
+        const result = await prisma.userOnClassroom.create({
             data: {
                 userId: userId,
                 classroomId: classroomId,
+                role: UserRole.ASSISTANT
             }
         });
         return result;
     }
     else if(role == 'instructor') {
-        const result = await prisma.instructorsOnClassrooms.create({
+        const result = await prisma.userOnClassroom.create({
             data: {
                 userId: userId,
                 classroomId: classroomId,
+                role: UserRole.INSTRUCTOR
             }
         });
         return result;
