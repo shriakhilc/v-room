@@ -41,52 +41,34 @@ const ClassroomList: NextPage = () => {
   );
 
   const addClassroom = trpc.useMutation('classroom.add');
-  const addUser = trpc.useMutation('classroom.addUser');
 
   const onAddClassroom = useCallback(
     async () => {
+      if (session == null || session.user == undefined) {
+        // This shouldn't happen normally, but explicit condition ensures type-safety
+        console.log('pages/classroom/list: ERROR: session.user not available to add as instructor');
+        return;
+      }
+
       await addClassroom.mutateAsync(
         {
           name: newName,
           department: newDept,
           courseNumber: parseInt(newCourseNumber, 10),
           crn: parseInt(newCrn, 10),
+          userId: session.user.id
         },
         {
-          async onSuccess(data) {
-            if (session == null || session.user == undefined) {
-              // This shouldn't happen normally, but explicit condition ensures type-safety
-              console.log('pages/classroom/list: ERROR: session.user not available to add as instructor');
-              return;
-            }
+          async onSuccess() {
+            utils.invalidateQueries(['user.getClassrooms']);
 
-            // Add current user as an instructor to the newly created classroom
-            await addUser.mutateAsync(
-              {
-                classroomId: data.id,
-                // onAddClassroom is only callable from a location where session.user is defined
-                userId: session.user.id,
-                role: UserRole.INSTRUCTOR,
-              },
-              {
-                onSuccess() {
-                  utils.invalidateQueries(['user.getClassrooms']);
-                  // TODO: check if calling query again is necessary
+            // reset form fields
+            setNewName("");
+            setNewCourseNumber("");
+            setNewCrn("");
+            setNewDept("");
 
-                  // reset form fields
-                  setNewName("");
-                  setNewCourseNumber("");
-                  setNewCrn("");
-                  setNewDept("");
-
-                  setShow(false);
-                },
-                onError(error) {
-                  // Can only be an unexpected error
-                  console.log(`pages/classroom/list: ERROR: ${error}`);
-                },
-              }
-            );
+            setShow(false);
           },
           onError(error) {
             // Shouldn't be possible
@@ -96,7 +78,7 @@ const ClassroomList: NextPage = () => {
         }
       );
     },
-    [session, newName, , newDept, newCourseNumber, newCrn, utils, addClassroom, addUser],
+    [session, newName, , newDept, newCourseNumber, newCrn, utils, addClassroom],
   );
 
   function showModal() {

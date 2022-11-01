@@ -141,12 +141,26 @@ const authRoutes = createProtectedRouter()
             department: z.string(),
             courseNumber: z.number(),
             crn: z.number(),
+            userId: z.string().cuid(),
         }),
         async resolve({ input }) {
+            // nested creation of classroom and instructor role in single DB call
             const classroom = await prisma.classroom.create({
-                data: input,
+                data: {
+                    name: input.name,
+                    department: input.department,
+                    courseNumber: input.courseNumber,
+                    crn: input.crn,
+                    users: {
+                        create: {
+                            userId: input.userId,
+                            role: UserRole.INSTRUCTOR,
+                        },
+                    },
+                },
                 select: defaultClassroomSelect,
             });
+
             return classroom;
         },
     })
