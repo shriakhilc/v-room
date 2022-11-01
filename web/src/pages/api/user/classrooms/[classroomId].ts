@@ -28,7 +28,7 @@ export async function getUsersForClassroom(classroomId: string) {
             classrooms: {
                 some: {
                     classroomId: classroomId as string,
-                    role: UserRole.ASSISTANT
+                    role: UserRole.INSTRUCTOR
                 }
             }
         }
