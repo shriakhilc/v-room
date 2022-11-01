@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../server/db/client";
 
-export async function deleteResponse(responseId: string) {
-    const result = await prisma.response.delete({
+export async function deleteAnswer(answerId: string) {
+    const result = await prisma.answer.delete({
         where: {
-            responseId
+            answerId
         }
     });
     return result;
@@ -17,7 +17,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (req.method == 'DELETE') {
         try {
-            const result = await deleteResponse(req.body.responseId);
+            const result = await deleteAnswer(req.body.answerId);
             res.status(200).json({ result });
         } catch (e) {
             res.status(500).json({ error: e });

@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../server/db/client";
 
-export async function updateAnswer(responseId: any, data: any) {
-    const result = await prisma.response.update({
+export async function updateAnswer(answerId: any, data: any) {
+    const result = await prisma.answer.update({
         where: {
-            responseId
+            answerId
         },
         data: data
     });
@@ -18,7 +18,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (req.method == 'PUT') {
         try {
-            const result = await updateAnswer(req.body.responseId, req.body.data);
+            const result = await updateAnswer(req.body.answerId, req.body.data);
             res.status(200).json({ result });
         } catch (e) {
             res.status(500).json({ error: e });

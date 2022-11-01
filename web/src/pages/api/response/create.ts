@@ -1,9 +1,9 @@
 import { NextApiRequest,NextApiResponse } from "next";
 import { prisma } from "../../../server/db/client";
 
-export async function createResponse(responseStr:any, questionId:any, userId: any) {
-        const result = await prisma.response.create({data:{
-            responseStr,
+export async function createAnswer(answerStr:any, questionId:any, userId: any) {
+        const result = await prisma.answer.create({data:{
+            answerStr,
             questionId,
             userId,
             createdAt:new Date(),
@@ -21,7 +21,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             {
                 req.body=JSON.parse(req.body);
             }
-            const result = await createResponse(req.body.responseStr, req.body.questionId, req.body.userId);
+            const result = await createAnswer(req.body.answerStr, req.body.questionId, req.body.userId);
             res.status(200).json({result});
         } catch(e) {
             res.status(500).json({error: e});

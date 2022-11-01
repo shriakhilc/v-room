@@ -7,7 +7,7 @@ export async function getQuestionById(questionId: string) {
             questionId
         },
         include: {
-            response: true, // Return all fields
+            answer: true, // Return all fields
         },
       })
     return result;

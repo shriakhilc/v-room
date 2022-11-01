@@ -14,7 +14,7 @@ export async function getAllQuestions(userId?: string) {
                     updatedAt: 'desc'
                 },
                 include:{
-                    response:true
+                    answer:true
                 }
             }
         );
@@ -26,7 +26,7 @@ export async function getAllQuestions(userId?: string) {
                     updatedAt: 'desc'
                 },
                 include:{
-                    response:true
+                    answer:true
                 }
             }
         );

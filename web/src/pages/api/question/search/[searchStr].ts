@@ -9,17 +9,17 @@ export async function getSearchResults(searchStr: string) {
           },
         },
         include: {
-            response: true, // Return all fields
+            answer: true, // Return all fields
           },
     });
-    const responseResult = await prisma.response.findMany({
+    const answerResult = await prisma.answer.findMany({
         where: {
-            responseStr: {
+            answerStr: {
               search: searchStr,
             },
           },
     });
-    return {questions:questionResult,answers:responseResult};
+    return {questions:questionResult,answers:answerResult};
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
