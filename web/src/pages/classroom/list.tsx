@@ -144,19 +144,19 @@ const ClassroomList: NextPage<PageProps> = ({ classroomData, userRoles, userEmai
                   </div>
                   <div className="pr-6 pl-6 pb-6">
                     <label className="block mb-2 text-sm font-medium text-gray-900">Course Name</label>
-                    <input value={newName} onChange={e => setNewName(e.target.value)} type="text" name="courseName" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="Intro to CS"></input>
+                    <input value={newName} onChange={e => setNewName(e.target.value)} type="text" name="courseName" id="courseName" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="Intro to CS"></input>
                   </div>
                   <div className="pr-6 pl-6 pb-6">
                     <label className="block mb-2 text-sm font-medium text-gray-900">Course Department</label>
-                    <input value={newDept} onChange={e => setNewDept(e.target.value)} type="text" name="department" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="CS"></input>
+                    <input value={newDept} onChange={e => setNewDept(e.target.value)} type="text" name="department" id="department" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="CS"></input>
                   </div>
                   <div className="pr-6 pl-6 pb-6">
                     <label className="block mb-2 text-sm font-medium text-gray-900">Course Number</label>
-                    <input value={newCourseNumber} onChange={e => setNewCourseNumber(e.target.value.replace(/\D/, ''))} type="text" name="courseNumber" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="1001"></input>
+                    <input value={newCourseNumber} onChange={e => setNewCourseNumber(e.target.value.replace(/\D/, ''))} type="text" name="courseNumber" id="courseNumber" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="1001"></input>
                   </div>
                   <div className="pr-6 pl-6 pb-6">
                     <label className="block mb-2 text-sm font-medium text-gray-900">Course CRN</label>
-                    <input value={newCrn} onChange={e => setNewCrn(e.target.value.replace(/\D/, ''))} type="text" name="crn" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="12345"></input>
+                    <input value={newCrn} onChange={e => setNewCrn(e.target.value.replace(/\D/, ''))} type="text" name="crn" id="crn" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="12345"></input>
                   </div>
                   <div className="flex items-center p-6 space-x-2 rounded-b border-t border-gray-600">
                     <button disabled={formCompleted()} onClick={() => { addClassroom(); setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Create Classroom</button>
