@@ -1,36 +1,34 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../server/db/client";
+import { UserRole } from "@prisma/client";
 
 export async function getUsersForClassroom(classroomId: string) {
     const studentUsers = await prisma.user.findMany({
         where: {
-            classroomsAsStudent: {
+            classrooms: {
                 some: {
-                    classroom: {
-                        id: classroomId as string,
-                    }
+                    classroomId: classroomId as string,
+                    role: UserRole.STUDENT
                 }
             }
         }
     });
     const assistantUsers = await prisma.user.findMany({
         where: {
-            classroomsAsAssistant: {
+            classrooms: {
                 some: {
-                    classroom: {
-                        id: classroomId as string,
-                    }
+                    classroomId: classroomId as string,
+                    role: UserRole.ASSISTANT
                 }
             }
         }
     });
     const instructorUsers = await prisma.user.findMany({
         where: {
-            classroomsAsInstructor: {
+            classrooms: {
                 some: {
-                    classroom: {
-                        id: classroomId as string,
-                    }
+                    classroomId: classroomId as string,
+                    role: UserRole.INSTRUCTOR
                 }
             }
         }

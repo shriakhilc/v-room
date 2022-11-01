@@ -1,23 +1,20 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../server/db/client";
 
-export async function getQuestionById(questionId: string) {
-    const result = await prisma.question.findMany({
+export async function getAnswerById(answerId: string) {
+    const result = await prisma.answer.findUnique({
         where: {
-            questionId
-        },
-        include: {
-            answer: true, // Return all fields
-        },
-      })
+            answerId: answerId
+        }
+    });
     return result;
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-        const questionId  = req.query?.questionId;
-        if(questionId) {
-            const result = await getQuestionById(questionId as string);
+        const answerId  = req.query?.answerId;
+        if(answerId) {
+            const result = await getAnswerById(answerId as string);
             res.status(200).json({result});
         }
         else {
