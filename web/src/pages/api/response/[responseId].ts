@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../server/db/client";
 
-export async function getResponseById(responseId: string) {
-    const result = await prisma.response.findUnique({
+export async function getAnswerById(answerId: string) {
+    const result = await prisma.answer.findUnique({
         where: {
-            responseId: responseId
+            answerId: answerId
         }
     });
     return result;
@@ -12,9 +12,9 @@ export async function getResponseById(responseId: string) {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-        const responseId  = req.query?.responseId;
-        if(responseId) {
-            const result = await getResponseById(responseId as string);
+        const answerId  = req.query?.answerId;
+        if(answerId) {
+            const result = await getAnswerById(answerId as string);
             res.status(200).json({result});
         }
         else {
