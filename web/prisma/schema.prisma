@@ -46,7 +46,7 @@ model User {
   sessions      Session[]
   classrooms    UserOnClassroom[]
   Question      Question[]
-  Response      Response[]
+  Answer        Answer[]
 }
 
 model VerificationToken {
@@ -89,14 +89,14 @@ model Question {
   userId      String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  response    Response[]
+  answer      Answer[]
 
   @@fulltext([questionStr])
 }
 
-model Response {
-  responseId  String   @id @default(cuid())
-  responseStr String   @db.Text
+model Answer {
+  answerId  String   @id @default(cuid())
+  answerStr String   @db.Text
   question    Question @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
   questionId  String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -104,7 +104,7 @@ model Response {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@fulltext([responseStr])
+  @@fulltext([answerStr])
 }
 
 enum UserRole {
