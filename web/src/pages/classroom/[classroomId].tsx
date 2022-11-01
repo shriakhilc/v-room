@@ -20,6 +20,11 @@ const ClassroomDetail: NextPage = () => {
   const classroomId = router.query.classroomId as string;
 
   const { data: session, status: sessionStatus } = useSession();
+  const [meetings, setMeetings] = useState([]);
+  const [show, setShow] = React.useState(false);
+  const [newQuestionTitle, setNewQuestionTitle] = React.useState("");
+  const [newQuestionBody, setNewQuestionBody] = React.useState("");
+  const [error, setError] = React.useState(false);
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -95,6 +100,26 @@ const ClassroomDetail: NextPage = () => {
         console.log(`pages/classroom/${classroomId}: ERROR: ${error}`);
       },
     });
+  }
+  
+  async function addQuestion () {
+    const created = await fetch('../api/question/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        "questionStr": newQuestionBody,
+        "classroomId": classroomId,
+        "userId": session?.user?.id,
+      })
+    });
+  }
+
+  function showModal() {
+    setShow(true);
+  }
+
+  function formCompleted() {
+    return newQuestionBody == "" || newQuestionTitle == "";
   }
 
   async function onArchiveClassroom() {
@@ -219,6 +244,44 @@ const ClassroomDetail: NextPage = () => {
           <main>
             <section className="container mx-auto flex flex-col items-left p-4">
               <QuestionBox></QuestionBox>
+              <button onClick={showModal} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Ask a Question</button>
+              {show &&
+              <div
+                className="fixed w-2/4 left-1/4 top-20"
+                onClick={e => {
+                  // do not close modal if anything inside modal content is clicked
+                  e.stopPropagation();
+                }}
+              >
+                <div className="relative bg-white rounded-lg shadow">
+                  <div className="flex justify-between items-start p-4 rounded-t border-b border-gray-600">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      Ask a Question
+                    </h3>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <p className="text-base leading-relaxed text-gray-900">
+                      Input a descriptive title and your question.
+                    </p>
+                  </div>
+                  <div className="pr-6 pl-6 pb-6">
+                    <label className="block mb-2 text-sm font-medium text-gray-900">Question Title</label>
+                    <input value={newQuestionTitle} onChange={e => setNewQuestionTitle(e.target.value)} type="text" name="questionTitle" id="questionTitle" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="What is a dog?"></input>
+                  </div>
+                  <div className="pr-6 pl-6 pb-6">
+                    <label className="block mb-2 text-sm font-medium text-gray-900">Question Details</label>
+                    <textarea value={newQuestionBody} onChange={e => setNewQuestionBody(e.target.value)} name="questionBody" id="questionBody" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="I don't know what a dog is."></textarea>
+                  </div>
+                  <div className="flex items-center p-6 space-x-2 rounded-b border-t border-gray-600">
+                    <button disabled={formCompleted()} onClick={() => { setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Submit Question</button>
+                    <button onClick={() => { setShow(false); setError(false) }} type="button" className="focus:ring-4 focus:outline-none rounded-lg border text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 bg-gray-700 text-gray-300 border-gray-500 hover:text-white hover:bg-gray-600 focus:ring-gray-600">Close</button>
+                  </div>
+                  {error &&
+                    <div>
+                      Error creating new question.
+                    </div>}
+                </div>
+              </div>}
             </section>
             <section className="container mx-auto h-5/6 flex flex-col items-left p-4">
               <div className="flex flex-row">
@@ -263,5 +326,6 @@ const ClassroomDetail: NextPage = () => {
     </>
   );
 };
+
 
 export default ClassroomDetail;
