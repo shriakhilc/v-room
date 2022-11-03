@@ -107,6 +107,7 @@ const ClassroomDetail: NextPage = () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        "questionTitle": newQuestionTitle,
         "questionStr": newQuestionBody,
         "classroomId": classroomId,
         "userId": session?.user?.id,
@@ -273,7 +274,7 @@ const ClassroomDetail: NextPage = () => {
                     <textarea value={newQuestionBody} onChange={e => setNewQuestionBody(e.target.value)} name="questionBody" id="questionBody" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="I don't know what a dog is."></textarea>
                   </div>
                   <div className="flex items-center p-6 space-x-2 rounded-b border-t border-gray-600">
-                    <button disabled={formCompleted()} onClick={() => { setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Submit Question</button>
+                    <button disabled={formCompleted()} onClick={() => { addQuestion(); setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Submit Question</button>
                     <button onClick={() => { setShow(false); setError(false) }} type="button" className="focus:ring-4 focus:outline-none rounded-lg border text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 bg-gray-700 text-gray-300 border-gray-500 hover:text-white hover:bg-gray-600 focus:ring-gray-600">Close</button>
                   </div>
                   {error &&

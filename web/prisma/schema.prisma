@@ -23,6 +23,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String? @db.Text
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
 
@@ -52,6 +53,7 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
 }
 
@@ -74,20 +76,22 @@ model UserOnClassroom {
   classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId String
   role        UserRole  @default(STUDENT)
+
   @@id([userId, classroomId])
 }
 
 model Question {
-  questionId  String     @id @default(cuid())
-  questionTitle String @db.Text
-  questionStr String     @db.Text
-  classroom   Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  classroomId String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  answer      Answer[]
+  questionId    String    @id @default(cuid())
+  questionTitle String    @db.Text
+  questionStr   String    @db.Text
+  classroom     Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroomId   String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  answer        Answer[]
+
   @@fulltext([questionStr])
 }
 
