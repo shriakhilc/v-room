@@ -9,22 +9,22 @@ export async function getQuestionById(questionId: string) {
         include: {
             answer: true, // Return all fields
         },
-      })
+    })
     return result;
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-        const questionId  = req.query?.questionId;
-        if(questionId) {
+        const questionId = req.query?.questionId;
+        if (questionId) {
             const result = await getQuestionById(questionId as string);
-            res.status(200).json({result});
+            res.status(200).json({ result });
         }
         else {
             res.status(404).json({});
         }
-    } catch(e) {
-        res.status(500).json({error: e});
+    } catch (e) {
+        res.status(500).json({ error: e });
     }
 }
 

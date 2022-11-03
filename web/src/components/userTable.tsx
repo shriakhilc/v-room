@@ -1,72 +1,21 @@
-import { Classroom, User } from "@prisma/client";
-import { NextRouter } from "next/router";
+import { UserRole } from "@prisma/client";
 import React from "react";
+import { inferQueryOutput } from '@/src/utils/trpc';
 
 
 interface UserTableProps {
-    users: User[],
-    userRoles: string[],
-    currentUserRole: string,
-    classroom: Classroom,
-    router: NextRouter,
-} 
+    users: inferQueryOutput<'classroom.sectionedUsers'>,
+    currentUserRole: UserRole,
+    onAddUser: (userId: string, role: UserRole) => Promise<void>,
+    onRemoveUser: (userId: string) => Promise<void>,
+}
 
-class UserTable extends React.Component<UserTableProps, {selectedRole: string}> {
+class UserTable extends React.Component<UserTableProps, { selectedRole: UserRole }> {
     constructor(props: UserTableProps) {
         super(props);
         this.state = {
-            selectedRole: "student",
+            selectedRole: UserRole.STUDENT,
         }
-    }
-    
-    async addUserToClassroom(user: User) {
-        //TODO: Make this add with other than student
-        const created = await fetch('../api/classrooms/users/add', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            "userId": user.id,
-            "classroomId": this.props.classroom.id,
-            "role": this.state.selectedRole
-          })
-        });
-        const readable = await created.json();
-        console.log(readable);
-        if(created.status == 200) {
-            this.props.router.replace(this.props.router.asPath);
-        }
-        else {
-          console.log(created);
-        }
-    }
-    
-    async removeUserFromClassroom(user: User, role: string) {
-        console.log("Removing");
-        const removed = await fetch('../api/classrooms/users/remove', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            "userId": user.id,
-            "classroomId": this.props.classroom.id,
-            "role": role.toLowerCase()
-          })
-        });
-        const readable = await removed.json();
-        console.log(readable);
-        if(removed.status == 200) {
-            this.props.router.replace(this.props.router.asPath);
-        }
-        else {
-          console.log(removed);
-        }
-    }
-
-    displayRemoveButton(index: number) {
-        return this.props.currentUserRole == "instructor" && this.props.userRoles[index] != "None"
-    }
-
-    displayAddButton(index: number) {
-        return this.props.currentUserRole == "instructor" && this.props.userRoles[index] == "None"
     }
 
     render() {
@@ -106,40 +55,65 @@ class UserTable extends React.Component<UserTableProps, {selectedRole: string}> 
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {this.props?.users?.map((user, index) => (
-                                    <tr key={user.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {user.name}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {user.email}    
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-900 uppercase">
-                                            {this.props.userRoles[index]}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {this.displayRemoveButton(index) &&
-                                                <a onClick={() => this.removeUserFromClassroom(user, this.props.userRoles[index] as string)} href="#" className="text-red-600 hover:text-red-900">
-                                                    Remove
-                                                </a>
-                                            }   
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {this.displayAddButton(index) &&
-                                                <div className="text-gray-900">
-                                                    <a onClick={() => this.addUserToClassroom(user)} href="#" className="text-green-600 hover:text-green-900">
-                                                        Add
+                                    {this.props.users.enrolled.map(({ user, role }) =>
+                                    (
+                                        <tr key={user.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {user.name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {user.email}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-900 uppercase">
+                                                {role}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {/* TODO: Use a Button, button styling for <a>, or use Link; whatever best practice might be */}
+                                                {this.props.currentUserRole == UserRole.INSTRUCTOR &&
+                                                    <a onClick={async () => await this.props.onRemoveUser(user.id)} href="#" className="text-red-600 hover:text-red-900">
+                                                        Remove
                                                     </a>
-                                                    &nbsp;as&nbsp; 
-                                                    <select name="roles" id="roles" className="text-gray-900">
-                                                        <option value="student" onClick={() => { this.setState({selectedRole: "student"})}}>Student</option>
-                                                        <option value="assistant" onClick={() => { this.setState({selectedRole: "assistant"})}}>Assistant</option>
-                                                        <option value="instructor" onClick={() => { this.setState({selectedRole: "instructor"})}}>Instructor</option>
-                                                    </select>
-                                                </div>
-                                            } 
-                                        </td>
-                                    </tr>
+                                                }
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {/* Empty cell since no Add action on these users */}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {this.props.users.unenrolled.map((user) =>
+                                    (
+                                        <tr key={user.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {user.name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {user.email}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-900 uppercase">
+                                                NONE
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {/* Empty cell since no Remove action on these users */}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {this.props.currentUserRole == UserRole.INSTRUCTOR &&
+                                                    <div className="text-gray-900">
+                                                        {/* TODO: Use a Button, button styling for <a>, or use Link; whatever best practice might be */}
+                                                        <a onClick={async () => await this.props.onAddUser(user.id, this.state.selectedRole)} href="#" className="text-green-600 hover:text-green-900">
+                                                            Add
+                                                        </a>
+                                                        &nbsp;as&nbsp;
+                                                        {/* TODO FIX: Bug: if user directly presses add without clicking on role, previous role state gets applied */}
+                                                        <select name="roles" id="roles" className="text-gray-900">
+                                                            {/* TODO is "value" needed if we won't use it? Can we use it somehow? */}
+                                                            <option value="student" onClick={() => { this.setState({ selectedRole: UserRole.STUDENT }) }}>Student</option>
+                                                            <option value="assistant" onClick={() => { this.setState({ selectedRole: UserRole.ASSISTANT }) }}>Assistant</option>
+                                                            <option value="instructor" onClick={() => { this.setState({ selectedRole: UserRole.INSTRUCTOR }) }}>Instructor</option>
+                                                        </select>
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
                                     ))}
                                 </tbody>
                             </table>

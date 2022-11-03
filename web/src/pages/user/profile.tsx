@@ -2,9 +2,10 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "../../components/header"
 import Footer from "../../components/footer"
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import { useRouter } from 'next/router'
 import { useSession } from "next-auth/react";
+import { trpc } from "@/src/utils/trpc";
 
 const UserProfile: NextPage = () => {
   const router = useRouter();
@@ -16,29 +17,33 @@ const UserProfile: NextPage = () => {
   const [newPronoun, setNewPronoun] = React.useState(session?.user?.pronouns ?? "");
   const [error, setError] = React.useState(false);
 
-  const handleSubmit = useCallback(async (e: any) => {
-    console.log(JSON.stringify(session));
-    const created = await fetch('../api/user/update', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        data: {
-          "name": newName,
-          "pronouns": newPronoun,
-        },
-        userId: session?.user?.id,
-      })
-    });
-    if (created.status == 200) {
-      //alert('Registration Successful');
-      router.push('/classroom/list');
-    }
-    else {
-      setError(true);
-      console.log(created);
-    }
+  const updateUser = trpc.useMutation('user.update');
 
-  }, [newName, newPronoun, session]);
+  const handleSubmit = useCallback(
+    async () => {
+      if (session?.user?.id == undefined) {
+        return;
+      }
+
+      await updateUser.mutateAsync(
+        {
+          id: session.user.id,
+          data: {
+            name: newName,
+            pronouns: newPronoun,
+          }
+        },
+        {
+          onSuccess: () => router.push('/classroom/list'),
+          onError(error) {
+            console.log(`/user/profile: ERROR: ${error}`);
+            setError(true);
+          },
+        }
+      );
+    },
+    [newName, newPronoun, session, router, updateUser]
+  );
 
   function showModal() {
     setShow(true);
