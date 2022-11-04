@@ -71,7 +71,7 @@ const authRoutes = createProtectedRouter()
             answerId: z.string().cuid(),
         }),
         async resolve({ input, ctx }) {
-            const answer = await prisma.answer.findUnique({
+            const answer = await prisma.answer.delete({
                 where: {
                     answerId: input.answerId,
                 },
