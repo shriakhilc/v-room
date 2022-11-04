@@ -42,6 +42,27 @@ const publicRoutes = createRouter()
         return answer;
     },
 })
+.query('nestedAnswers', {
+    input: z.object({
+        answerId: z.string().cuid(),
+    }),
+    async resolve({ input }) {
+        const { answerId } = input;
+        const nestedAnswers = await prisma.answer.findMany({
+            where: { questionId: answerId },
+            include: {
+                user: true
+            }
+        });
+        if (!nestedAnswers) {
+            throw new TRPCError({
+                code: 'NOT_FOUND',
+                message: `No replies for id '${answerId}'`,
+            });
+        }
+        return nestedAnswers;
+    },
+});
 
 
 // Endpoints that need to authenticate user

@@ -55,6 +55,33 @@ const publicRoutes = createRouter()
             return question;
         },
     })
+    .query('byClassroom', {
+        input: z.object({
+            classroomId: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const { classroomId } = input;
+            const question = await prisma.question.findMany({
+                where: { classroomId },
+                include: {
+                    classroom: true,
+                    user: true,
+                    answer: {
+                        include: {
+                            user: true
+                        }
+                    },
+                },
+            });
+            if (!question) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: `No question with id '${classroomId}'`,
+                });
+            }
+            return question;
+        },
+    })
     // TODO: ideally use above APIs to split up the calls after UI improvements
     // maybe not show all unenrolled users in table, and only use them for auto-completion.
     .query('bySearchStr', {
