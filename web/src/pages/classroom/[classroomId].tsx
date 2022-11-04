@@ -11,10 +11,7 @@ import Header from "@/src/components/header"
 import Footer from "@/src/components/footer"
 import UserTable from "@/src/components/userTable";
 import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
-<<<<<<< HEAD
-=======
 import { UserRole } from "@prisma/client";
->>>>>>> e1e9edfe9b8ea570a993406e5ded84b76fe92faf
 import ReplyBox from "@/src/components/ReplyBox";
 import QuestionBox from "@/src/components/QuestionBox";
 
@@ -28,19 +25,6 @@ const ClassroomDetail: NextPage = () => {
   const [newQuestionTitle, setNewQuestionTitle] = React.useState("");
   const [newQuestionBody, setNewQuestionBody] = React.useState("");
   const [error, setError] = React.useState(false);
-<<<<<<< HEAD
-
-  async function removeClassroom(archive: boolean) {
-    const removed = await fetch('../api/classrooms/remove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        "classroomId": classroom.id,
-        "archive": archive
-      })
-    });
-=======
->>>>>>> e1e9edfe9b8ea570a993406e5ded84b76fe92faf
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -120,29 +104,6 @@ const ClassroomDetail: NextPage = () => {
   
   async function addQuestion () {
     const created = await fetch('../api/question/create', {
-<<<<<<< HEAD
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        "questionStr": newQuestionBody,
-        "classroomId": classroom.id,
-        "userId": session?.user?.id,
-      })
-    });
-  }
-
-  function showModal() {
-    setShow(true);
-  }
-
-  function formCompleted() {
-    return newQuestionBody == "" || newQuestionTitle == "";
-  }
-
-  async function getMeetings() {
-    fetch('../api/meetings', {
-=======
->>>>>>> e1e9edfe9b8ea570a993406e5ded84b76fe92faf
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -280,11 +241,7 @@ const ClassroomDetail: NextPage = () => {
 
         <Header session={session} status={sessionStatus}></Header>
         
-<<<<<<< HEAD
-        {status == "authenticated" && (
-=======
         {sessionStatus == "authenticated" && (
->>>>>>> e1e9edfe9b8ea570a993406e5ded84b76fe92faf
           <main>
             <section className="container mx-auto flex flex-col items-left p-4">
               <QuestionBox></QuestionBox>
@@ -317,11 +274,7 @@ const ClassroomDetail: NextPage = () => {
                     <textarea value={newQuestionBody} onChange={e => setNewQuestionBody(e.target.value)} name="questionBody" id="questionBody" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="I don't know what a dog is."></textarea>
                   </div>
                   <div className="flex items-center p-6 space-x-2 rounded-b border-t border-gray-600">
-<<<<<<< HEAD
-                    <button disabled={formCompleted()} onClick={() => { setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Submit Question</button>
-=======
                     <button disabled={formCompleted()} onClick={() => { addQuestion(); setShow(false); }} type="button" className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-grey-200 disabled:text-grey:600 bg-red-500 hover:bg-red-700 text-white focus:ring-red-300">Submit Question</button>
->>>>>>> e1e9edfe9b8ea570a993406e5ded84b76fe92faf
                     <button onClick={() => { setShow(false); setError(false) }} type="button" className="focus:ring-4 focus:outline-none rounded-lg border text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 bg-gray-700 text-gray-300 border-gray-500 hover:text-white hover:bg-gray-600 focus:ring-gray-600">Close</button>
                   </div>
                   {error &&
@@ -342,20 +295,6 @@ const ClassroomDetail: NextPage = () => {
                     {classroom.active ? 'Active' : 'Inactive'}
                   </span>
                 </h1>
-<<<<<<< HEAD
-                {currentUserRole === "instructor" &&
-                  <ClassroomSettingsDropdown onArchiveClassroom={() => removeClassroom(true)} onDeleteClassroom={() => removeClassroom(false)}></ClassroomSettingsDropdown>
-                }
-              </div>
-              <UserTable router={router} users={allUsersSectioned} userRoles={userRoles} classroom={classroom} currentUserRole={currentUserRole} ></UserTable>
-              {elevatedPrivileges ?
-                <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
-                : (meetings[0] ?
-                  <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
-                  : <p>No meetings</p>
-                )
-              }
-=======
                 {currentUserRole == UserRole.INSTRUCTOR &&
                   <ClassroomSettingsDropdown onArchiveClassroom={onArchiveClassroom} onDeleteClassroom={onDeleteClassroom}></ClassroomSettingsDropdown>
                 }
@@ -375,7 +314,6 @@ const ClassroomDetail: NextPage = () => {
                 <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
                 : <p>No meetings</p>
               } */}
->>>>>>> e1e9edfe9b8ea570a993406e5ded84b76fe92faf
             </section>
           </main>
         )}

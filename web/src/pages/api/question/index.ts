@@ -39,6 +39,7 @@ export default async function handler (req: NextApiRequest, res: NextApiResponse
     if(req.method == 'GET') {
         try {
             let questions;
+            console.log("1111111111")
             if(req.body.userId)
             {
                 questions = await getAllQuestions(req.body.userId);
