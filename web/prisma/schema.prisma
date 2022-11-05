@@ -81,17 +81,18 @@ model UserOnClassroom {
 }
 
 model Question {
-  questionId  String    @id @default(cuid())
-  questionStr String    @db.Text
-  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  classroomId String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  answer      Answer[]
+  questionId    String    @id @default(cuid())
+  questionTitle String    @db.Text
+  questionStr   String    @db.Text
+  classroom     Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroomId   String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  answer        Answer[]
 
-  @@fulltext([questionStr])
+  @@fulltext([questionTitle, questionStr])
 }
 
 model Answer {
