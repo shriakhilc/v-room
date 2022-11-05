@@ -96,18 +96,12 @@ const publicRoutes = createRouter()
             if(!input.classroomId && !input.userId) {
                 const question = await prisma.question.findMany({
                     where: {
-                        OR: [
-                            {
-                                questionStr: {
-                                    search: searchStr,
-                                },
+                            questionStr: {
+                                search: searchStr,
                             },
-                            {
-                                questionTitle: {
-                                    search: searchStr,
-                                },
-                            },
-                        ]
+                            questionTitle: {
+                                search: searchStr,
+                            }
                     },
                     include: {
                         classroom: true,
@@ -124,20 +118,13 @@ const publicRoutes = createRouter()
             else if(input.classroomId && !input.userId) {
                 const question = await prisma.question.findMany({
                     where: {
-                        OR: [
-                            {
-                                classroomId: input.classroomId,
-                                questionStr: {
-                                    search: searchStr,
-                                },
-                            },
-                            {
-                                classroomId: input.classroomId,
-                                questionTitle: {
-                                    search: searchStr,
-                                },
-                            }
-                        ]
+                        classroomId: input.classroomId,
+                        questionStr: {
+                            search: searchStr,
+                        },
+                        questionTitle: {
+                            search: searchStr,
+                        },
                     },
                     include: {
                         classroom: true,
@@ -154,20 +141,13 @@ const publicRoutes = createRouter()
             else if(input.userId && !input.classroomId) {
                 const question = await prisma.question.findMany({
                     where: {
-                        OR: [
-                            {
-                                userId: input.userId,
-                                questionStr: {
-                                    search: searchStr,
-                                },
-                            },
-                            {
-                                userId: input.userId,
-                                questionTitle: {
-                                    search: searchStr,
-                                },
-                            }
-                        ]
+                        userId: input.userId,
+                        questionStr: {
+                            search: searchStr,
+                        },
+                        questionTitle: {
+                            search: searchStr,
+                        },
                     },
                     include: {
                         classroom: true,
@@ -184,22 +164,14 @@ const publicRoutes = createRouter()
             else {
                 const question = await prisma.question.findMany({
                     where: {
-                        OR: [
-                            {
-                                userId: input.userId as string,
-                                classroomId: input.classroomId as string,
-                                questionStr: {
-                                    search: searchStr,
-                                },
-                            },
-                            {
-                                userId: input.userId as string,
-                                classroomId: input.classroomId as string,
-                                questionTitle: {
-                                    search: searchStr,
-                                },
-                            }
-                        ]
+                        userId: input.userId as string,
+                        classroomId: input.classroomId as string,
+                        questionStr: {
+                            search: searchStr,
+                        },
+                        questionTitle: {
+                            search: searchStr,
+                        },
                     },
                     include: {
                         classroom: true,

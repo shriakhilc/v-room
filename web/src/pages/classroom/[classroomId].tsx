@@ -18,6 +18,7 @@ import QuestionBox from "@/src/components/QuestionBox";
 const ClassroomDetail: NextPage = () => {
   const router = useRouter();
   const classroomId = router.query.classroomId as string;
+  const utils = trpc.useContext();
 
   const { data: session, status: sessionStatus } = useSession();
   const [meetings, setMeetings] = useState([]);
@@ -147,7 +148,8 @@ const ClassroomDetail: NextPage = () => {
     },
     { 
       onSuccess: () => {
-        router.replace(router.asPath)
+        utils.invalidateQueries(["question.byClassroom"]);
+        utils.invalidateQueries(["question.bySearchStr"]);
       }, 
       onError(error) {
         console.log(`ERROR ${error}`);
@@ -276,7 +278,7 @@ const ClassroomDetail: NextPage = () => {
                     <ul>
                       {questions.map(question => (
                         <li key={question.questionId}>
-                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router}></QuestionBox>
+                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
                         </li>
                       ))}
                     </ul>
@@ -285,7 +287,7 @@ const ClassroomDetail: NextPage = () => {
                     <ul>
                       {searchQuestions.map(question => (
                         <li key={question.questionId}>
-                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router}></QuestionBox>
+                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
                         </li>
                       ))}
                     </ul>

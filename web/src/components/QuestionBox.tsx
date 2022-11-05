@@ -1,4 +1,4 @@
-import { Answer, Classroom, Prisma, Question, User } from "@prisma/client";
+import { Answer, Classroom, Prisma, Question, User, UserRole } from "@prisma/client";
 import Link from "next/link";
 import React, { useState } from "react";
 import { questionRouter } from "../server/router/question";
@@ -6,6 +6,7 @@ import { trpc } from "../utils/trpc";
 import ReplyBox from "./ReplyBox";
 import { withRouter, NextRouter } from "next/router";
 import { timeUntilStale } from "react-query/types/core/utils";
+import { useSession } from "next-auth/react";
 
 interface QuestionBoxProps {
     question: Question,
@@ -13,15 +14,23 @@ interface QuestionBoxProps {
         include: { user: true }
     }>[],
     user: User,
-    router: NextRouter
+    router: NextRouter,
+    currentUserRole: UserRole,
 } 
 
 export default function QuestionBox(props: QuestionBoxProps) {
 
     const [replying, setReplying] = useState(false);
     const [replyText, setReplyText] = useState("");
+    const [questionText, setQuestionText] = useState(props.question.questionStr);
+    const [questionTitle, setQuestionTitle] = useState(props.question.questionTitle);
+    const [editing, setEditing] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState(false);
     const addAnswer = trpc.useMutation('answer.add');
+    const deleteQuestion = trpc.useMutation('question.delete');
+    const updateQuestion = trpc.useMutation('question.update');
     const utils = trpc.useContext();
+    const {data, status} = useSession();
 
     const addAnswerToQuestion = async () => {
         await addAnswer.mutateAsync(
@@ -32,8 +41,8 @@ export default function QuestionBox(props: QuestionBoxProps) {
             },
             {
               onSuccess: () => {
-                //TEMPORARY
-                window.location.reload();
+                utils.invalidateQueries(["question.byClassroom"]);
+                utils.invalidateQueries(["question.bySearchStr"]);
               },
               onError(error) {
                 // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -45,22 +54,74 @@ export default function QuestionBox(props: QuestionBoxProps) {
         setReplying(false);
     }
 
+    const onDeleteQuestion = async () => {
+        await deleteQuestion.mutateAsync(
+            {
+                questionId: props.question.questionId,
+            },
+            {
+                onSuccess: () => {
+                    setDeleteConfirm(false);
+                    utils.invalidateQueries(["question.byClassroom"]);
+                    utils.invalidateQueries(["question.bySearchStr"]);
+                },
+                onError(error) {
+                    // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                    console.log(`Deleting question ERROR: ${error}`);
+                },
+            }
+        );
+    }
+
+    const onUpdateQuestion = async () => {
+        await updateQuestion.mutateAsync(
+            {
+                questionId: props.question.questionId,
+                questionTitle: questionTitle,
+                questionStr: questionText,
+            },
+            {
+                onSuccess: () => {
+                    setEditing(false)
+                    utils.invalidateQueries(["question.byClassroom"]);
+                    utils.invalidateQueries(["question.bySearchStr"]);
+                },
+                onError(error) {
+                    // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                    console.log(`Updating question ERROR: ${error}`);
+                },
+            }
+        );
+    }
+
     return( 
         <div className="p-4 border-b-2 bg-gray-50 border rounded-md m-2">   
             <div className="py-2 text-2xl text-gray-900 font-bold">
-                {props.question.questionTitle}
+                {!editing && props.question.questionTitle}
+                {editing && 
+                    <div>
+                        <textarea onChange={(e) => setQuestionTitle(e.currentTarget.value)} value={questionTitle} className="border rounded-md border-black min-w-full"></textarea>
+                    </div>
+                }
             </div>
             <div className="py-2 text-gray-900">
-                {props.question.questionStr}
+                {!editing && props.question.questionStr}
+                {editing && 
+                    <div>
+                        <textarea onChange={(e) => setQuestionText(e.currentTarget.value)} value={questionText} className="border rounded-md border-black min-w-full"></textarea>
+                    </div>
+                }
             </div> 
             <div className="py-2 text-md text-gray-500">
                 Asked by {props.user.name}
             </div>
+
+
             { props.answers.length > 0 &&
                 <ul>
                     {props.answers.map(answer => (
                         <li className="p-1 m-auto" key={answer.answerId}>
-                            <ReplyBox parent={props.question} nestings={0} MAX_NESTINGS={2} answer={answer} user={answer.user}></ReplyBox>
+                            <ReplyBox parent={props.question} nestings={0} MAX_NESTINGS={2} answer={answer} user={answer.user} currentUserRole={props.currentUserRole}></ReplyBox>
                         </li>
                     ))}
                 </ul>
@@ -79,7 +140,23 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     </div>
                 </div>
             }
-            <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Add an Answer</button> 
+            <div className="flex">
+                <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Add an Answer</button> 
+                <div className="flex flex-1 items-end justify-end">
+                    { (!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                        <button onClick={() => setEditing(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Edit</button>
+                    }
+                    { editing && 
+                        <button onClick={() => onUpdateQuestion()} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Confirm</button>
+                    }
+                    { (!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                        <button onClick={() => setDeleteConfirm(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2">Delete</button>
+                    }
+                    { deleteConfirm && 
+                        <button onClick={() => onDeleteQuestion()} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2">Click Again to Delete</button>
+                    }
+                </div>
+            </div>
         </div>
     );
 }

@@ -92,7 +92,7 @@ model Question {
   updatedAt     DateTime  @updatedAt
   answer        Answer[]
 
-  @@fulltext([questionStr])
+  @@fulltext([questionTitle, questionStr])
 }
 
 model Answer {
