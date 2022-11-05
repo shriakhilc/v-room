@@ -87,20 +87,133 @@ const publicRoutes = createRouter()
     .query('bySearchStr', {
         input: z.object({
             searchStr: z.string(),
+            //not sure if can make optional
+            classroomId: z.string().cuid().nullable(),
+            userId: z.string().cuid().nullable(),
         }),
         async resolve({ input }) {
             const { searchStr } = input;
-            const question = await prisma.question.findMany({
-                where: {
-                    questionStr: {
-                      search: searchStr,
+            if(!input.classroomId && !input.userId) {
+                const question = await prisma.question.findMany({
+                    where: {
+                        OR: [
+                            {
+                                questionStr: {
+                                    search: searchStr,
+                                },
+                            },
+                            {
+                                questionTitle: {
+                                    search: searchStr,
+                                },
+                            },
+                        ]
                     },
-                  },
-                  include: {
-                      answer: true, // Return all fields
+                    include: {
+                        classroom: true,
+                        user: true,
+                        answer: {
+                            include: {
+                                user: true
+                            }
+                        },
                     },
-            });
-            return question;
+                });
+                return question;
+            }
+            else if(input.classroomId && !input.userId) {
+                const question = await prisma.question.findMany({
+                    where: {
+                        OR: [
+                            {
+                                classroomId: input.classroomId,
+                                questionStr: {
+                                    search: searchStr,
+                                },
+                            },
+                            {
+                                classroomId: input.classroomId,
+                                questionTitle: {
+                                    search: searchStr,
+                                },
+                            }
+                        ]
+                    },
+                    include: {
+                        classroom: true,
+                        user: true,
+                        answer: {
+                            include: {
+                                user: true
+                            }
+                        },
+                    },
+                });
+                return question;
+            }
+            else if(input.userId && !input.classroomId) {
+                const question = await prisma.question.findMany({
+                    where: {
+                        OR: [
+                            {
+                                userId: input.userId,
+                                questionStr: {
+                                    search: searchStr,
+                                },
+                            },
+                            {
+                                userId: input.userId,
+                                questionTitle: {
+                                    search: searchStr,
+                                },
+                            }
+                        ]
+                    },
+                    include: {
+                        classroom: true,
+                        user: true,
+                        answer: {
+                            include: {
+                                user: true
+                            }
+                        },
+                    },
+                });
+                return question;
+            }
+            else {
+                const question = await prisma.question.findMany({
+                    where: {
+                        OR: [
+                            {
+                                userId: input.userId as string,
+                                classroomId: input.classroomId as string,
+                                questionStr: {
+                                    search: searchStr,
+                                },
+                            },
+                            {
+                                userId: input.userId as string,
+                                classroomId: input.classroomId as string,
+                                questionTitle: {
+                                    search: searchStr,
+                                },
+                            }
+                        ]
+                    },
+                    include: {
+                        classroom: true,
+                        user: true,
+                        answer: {
+                            include: {
+                                user: true
+                            }
+                        },
+                    },
+                });
+                return question;
+            }
+            return [];
         },
     });
 

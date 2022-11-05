@@ -25,6 +25,7 @@ const ClassroomDetail: NextPage = () => {
   const [newQuestionTitle, setNewQuestionTitle] = React.useState("");
   const [newQuestionBody, setNewQuestionBody] = React.useState("");
   const [error, setError] = React.useState(false);
+  const [searchStr, setSearchStr]  = React.useState("");
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -46,6 +47,13 @@ const ClassroomDetail: NextPage = () => {
 
   const { data: questions, status: questionStatus } = trpc.useQuery(
     ['question.byClassroom', { classroomId: classroomId }],
+    {
+      enabled: classroomStatus == "success" && classroom != undefined,
+    }
+  );
+
+  const { data: searchQuestions, status: searchQuestionStatus } = trpc.useQuery(
+    ['question.bySearchStr', { searchStr: searchStr, userId: null, classroomId: classroomId }],
     {
       enabled: classroomStatus == "success" && classroom != undefined,
     }
@@ -259,17 +267,29 @@ const ClassroomDetail: NextPage = () => {
           <main>
             <section className="container mx-auto flex flex-col items-left p-4">
               {questions && 
-                <div>
+                <div className="overflow-auto max-h-[50rem]">
                   <div className="py-2 text-4xl text-red-500 font-bold">
                     Questions for {classroom.name}
                   </div>
-                  <ul>
-                    {questions.map(question => (
-                      <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router}></QuestionBox>
-                      </li>
-                    ))}
-                  </ul>
+                  Filter results: <input value={searchStr} onChange={(e) => setSearchStr(e.currentTarget.value)} type="text" className="text-gray-900 rounded"></input>
+                  {searchStr == "" &&
+                    <ul>
+                      {questions.map(question => (
+                        <li key={question.questionId}>
+                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router}></QuestionBox>
+                        </li>
+                      ))}
+                    </ul>
+                  }
+                  {(searchStr != "" && searchQuestions) &&
+                    <ul>
+                      {searchQuestions.map(question => (
+                        <li key={question.questionId}>
+                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router}></QuestionBox>
+                        </li>
+                      ))}
+                    </ul>
+                  }
                 </div>
               }
               { !questions && 
