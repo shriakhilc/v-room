@@ -2,26 +2,52 @@ import type { GetServerSidePropsContext, NextPage } from "next";
 import Head from "next/head";
 import Header from "../../../components/header"
 import Footer from "../../../components/footer"
-import type { Classroom } from '@prisma/client';
+import { Classroom, UserRole } from '@prisma/client';
 import React from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { authOptions } from "../../api/auth/[...nextauth]";
 import { unstable_getServerSession, User } from "next-auth";
-import { getUserByEmail } from "../../api/user/[userId]";
-import { getClassroomsForUser } from "../../api/classrooms/users/[userId]";
-import { getClassroom } from "../../api/classrooms/[classroomId]";
+import { useRouter } from "next/router";
+import { trpc } from "@/src/utils/trpc";
 
-type PageProps = {
-  classroom: Classroom,
-  user: User
-}
-
-const ClassroomList: NextPage<PageProps> = ({ classroom, user }) => {
+const JoinClassroomPage: NextPage = () => {
   const {data, status} = useSession();
+  const router = useRouter();
+  const inviteCode = router.query.inviteCode as string;
+
+  const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byInviteCode', {inviteCode: inviteCode}],
+    {
+      enabled: router.query.inviteCode != undefined,
+    }
+  ); 
+
+  const { data: currentRelationship, status: currentRelationshipStatus } = trpc.useQuery(['userOnClassroom.byClassroomAndUserId', { classroomId: classroom?.id as string, userId: data?.user?.id as string}],
+    {
+      enabled: data?.user?.id != undefined && classroom != undefined,
+    }
+  );
+
+  if(status == "authenticated" && classroom && currentRelationship) {
+    router.push('/classroom/'+classroom.id);
+  }
+
+  const addUserToClassroom = trpc.useMutation('userOnClassroom.create');
 
   async function joinClassroom() {
-    
+    await addUserToClassroom.mutateAsync(
+      {
+        classroomId: classroom?.id as string,
+        userId: data?.user?.id as string,
+        role: UserRole.STUDENT,
+      },
+      {
+        onSuccess: () => router.push('/classroom/'+classroom?.id),
+        onError(error) {
+          console.log(`userTable: ERROR: ${error}`);
+        },
+      }
+    );
   }
 
   return (
@@ -35,7 +61,7 @@ const ClassroomList: NextPage<PageProps> = ({ classroom, user }) => {
 
         <Header session={data} status={status}></Header>
 
-        {status == "authenticated" &&
+        {(status == "authenticated" && classroom && !currentRelationship) &&
           <main className="container mx-auto h-5/6 flex flex-col items-left p-4">
             <h1 className="text-lg leading-normal p-4">
               <span className="text-red-500">Join {classroom.name}?</span>
@@ -55,23 +81,4 @@ const ClassroomList: NextPage<PageProps> = ({ classroom, user }) => {
   );
 };
 
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-
-  const session = await unstable_getServerSession(
-    context.req,
-    context.res,
-    authOptions);
-  if (session) {
-    const user = await getUserByEmail(session.user?.email);
-    if (user && context.params?.classroomId) {
-      const classroom = await getClassroom(context.params?.classroomId as string);
-      return { props: { classroom: classroom, user: user } };
-    }
-  }
-  else {
-    return { props: { classroom: null, user: null } };
-  }
-
-}
-
-export default ClassroomList;
+export default JoinClassroomPage;

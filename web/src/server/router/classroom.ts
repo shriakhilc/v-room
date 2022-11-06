@@ -60,6 +60,25 @@ const publicRoutes = createRouter()
             return classroom;
         },
     })
+    .query('byInviteCode', {
+        input: z.object({
+            inviteCode: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const { inviteCode } = input;
+            const classroom = await prisma.classroom.findUnique({
+                where: { inviteCode },
+                select: defaultClassroomSelect,
+            });
+            if (!classroom) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: `No classroom with invite code '${inviteCode}'`,
+                });
+            }
+            return classroom;
+        },
+    })
     .query('enrolledUsers', {
         input: z.object({
             id: z.string().cuid(),
