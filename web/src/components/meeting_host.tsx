@@ -3,6 +3,7 @@ import Peer, { DataConnection, MediaConnection } from 'peerjs';
 import { useState } from 'react';
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
+
 const peer = new Peer();
 
 export default function MeetingHost(props: { classroomid: string; }) {
@@ -36,8 +37,8 @@ export default function MeetingHost(props: { classroomid: string; }) {
 
     return (
         <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
-            <p>{"Host ID: " + peerid}</p>
-            <Link href={"/meeting/join?hostid=" + peerid}> join meeting data channel</Link>
+            <p>Join URL: {`${window.location.origin}/meeting/${peerid}`}</p>
+            <button className='btn' onClick={() => navigator.clipboard.writeText(`${window.location.origin}/meeting/${peerid}`)}>Copy invite link</button>
             <button className="btn" onClick={() => callParticipant(0)}>Bring Student In</button>
             <br />
             <div className="">

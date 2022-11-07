@@ -23,7 +23,7 @@ const publicRoutes = createRouter()
     .mutation('addToClassroom', {
         input: z.object({
             classroomId: z.string().cuid(),
-            meetingId: z.string().cuid(),
+            meetingId: z.string(),
         }),
         async resolve({ input }) {
             // TODO: Append to string instead of overwriting? Will require using raw query

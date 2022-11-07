@@ -189,24 +189,7 @@ const ClassroomDetail: NextPage = () => {
     );
   }
 
-  if (classroom == undefined) {
-    return (
-      <>
-        <div className="container mx-auto">
-          <Head>
-            <title>V-Room</title>
-            <meta name="description" content="Reimagining Office Hours" />
-            <link rel="icon" href="/favicon.svg" />
-          </Head>
-          <Header></Header>
-          <main className="max-h-[50rem] min-h-[50rem]">Could not find classroom.</main>
-          <Footer></Footer>
-        </div>
-      </>
-    );
-  }
-
-  if (allUsersSectioned == undefined) {
+  if (classroomStatus != "success") {
     return (
       <>
         <div className="container mx-auto">
@@ -217,7 +200,35 @@ const ClassroomDetail: NextPage = () => {
           </Head>
           <Header></Header>
           <main className="max-h-[50rem] min-h-[50rem]">
-            Users undefined.
+            {classroomStatus == "error" ?
+              <>Could not find classroom.</>
+              :
+              <>Loading...</>
+            }
+          </main>
+          <Footer></Footer>
+        </div>
+      </>
+    );
+  }
+
+  if (userStatus != "success") {
+    return (
+      <>
+        <div className="container mx-auto">
+          <Head>
+            <title>V-Room</title>
+            <meta name="description" content="Reimagining Office Hours" />
+            <link rel="icon" href="/favicon.svg" />
+          </Head>
+          <Header></Header>
+          <main className="max-h-[50rem] min-h-[50rem]">
+            {userStatus == "error" ?
+              <>Error fetching users.</>
+              :
+              <>Loading...</>
+            }
+
           </main>
           <Footer></Footer>
         </div>
@@ -353,12 +364,12 @@ const ClassroomDetail: NextPage = () => {
             {/* TODO: better way to join and host meetings */}
             {
               (currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
-                <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
+                <Link className="btn" href={`/meeting/host?classroomid=${classroom.id}`}>Host a meeting</Link>
               )
             }
             {/* display list if not undefined or empty */}
             {meetings?.at(0) ?
-              <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
+              <Link className="btn" href={`/meeting/${meetings[0]}`}>Join a meeting</Link>
               : <p>No meetings</p>
             }
           </section >

@@ -2,7 +2,10 @@ import React, { useState, useRef } from 'react';
 import Peer, { MediaConnection } from 'peerjs';
 
 export default function ParticipantStream(props: {
-    call: MediaConnection | undefined; peer: Peer; peerid: string | undefined; localStream: MediaStream | null;
+    call: MediaConnection | undefined;
+    peer: Peer;
+    peerid: string | undefined;
+    localStream: MediaStream | null;
 }) {
     const [participantStream, setParticipantStream] = useState<MediaStream | null>(null);
 

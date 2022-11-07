@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 const MeetingParticipant = dynamic(() => import('@/components/meeting_participant'), {
     ssr: false,
 })
+
 const JoinMeeting: NextPage = () => {
 
     const { isReady, query } = useRouter();
@@ -17,7 +18,7 @@ const JoinMeeting: NextPage = () => {
                 <meta name="description" content="In room" />
                 <link rel="icon" href="/favicon.svg" />
             </Head>
-            {isReady && typeof query.hostid === "string" && <MeetingParticipant hostid={query.hostid} />}
+            {isReady && typeof query.hostId === "string" && <MeetingParticipant hostid={query.hostId} />}
         </>
     )
 }

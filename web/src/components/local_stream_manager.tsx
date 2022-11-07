@@ -16,6 +16,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
         if (navigator?.mediaDevices !== undefined) { //TODO: handle this, may occur when not inside secure contexts
             await navigator.mediaDevices
                 .getUserMedia({ //TODO: display a notice/reason for rejection
+                    // this indicates that stream must support both
                     video: true,
                     audio: true,
                 })
