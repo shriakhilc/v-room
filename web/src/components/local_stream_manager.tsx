@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { trpc } from '../utils/trpc';
+
 export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; host?: boolean; classroomid?: string; peerid?: string; }) {
     const [playing, setPlaying] = useState(false);
 
@@ -6,6 +8,9 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
     const [localVideo, setLocalVideo] = useState(true);
 
     const localStreamView = useRef<HTMLVideoElement | null>(null);
+
+    const addMeetingToClassroom = trpc.useMutation('meeting.addToClassroom');
+
 
     const startStream = async () => {
         if (navigator?.mediaDevices !== undefined) { //TODO: handle this, may occur when not inside secure contexts
@@ -24,15 +29,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
                 });
             setPlaying(true);
             if (props.host) {
-                fetch('../api/meetings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        "classroomId": props.classroomid,
-                        "meetingId": props.peerid,
-                        "add": true,
-                    })
-                });
+                await addMeetingToClassroom.mutateAsync({ classroomId: props.classroomid!, meetingId: props.peerid! });
             }
         }
     };

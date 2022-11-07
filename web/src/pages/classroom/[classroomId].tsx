@@ -21,12 +21,11 @@ const ClassroomDetail: NextPage = () => {
   const utils = trpc.useContext();
 
   const { data: session, status: sessionStatus } = useSession();
-  const [meetings, setMeetings] = useState([]);
   const [show, setShow] = React.useState(false);
   const [newQuestionTitle, setNewQuestionTitle] = React.useState("");
   const [newQuestionBody, setNewQuestionBody] = React.useState("");
   const [error, setError] = React.useState(false);
-  const [searchStr, setSearchStr]  = React.useState("");
+  const [searchStr, setSearchStr] = React.useState("");
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -76,7 +75,6 @@ const ClassroomDetail: NextPage = () => {
       {
         // TODO: Is this just router.reload() ? Can we do better by invalidating users
         // TODO: Table not auto-updating could be due to unmount
-        // TOOD: investigate the constant prisma queries on terminal, maybe incorrect usage of hooks
         onSuccess: () => router.replace(router.asPath),
         onError(error) {
           // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -141,38 +139,31 @@ const ClassroomDetail: NextPage = () => {
 
   async function onAddQuestion() {
     await addQuestion.mutateAsync({
-      classroomId: classroomId, 
-      userId: session?.user?.id as string, 
-      questionTitle: newQuestionTitle, 
+      classroomId: classroomId,
+      userId: session?.user?.id as string,
+      questionTitle: newQuestionTitle,
       questionStr: newQuestionBody
     },
-    { 
-      onSuccess: () => {
-        utils.invalidateQueries(["question.byClassroom"]);
-        utils.invalidateQueries(["question.bySearchStr"]);
-      }, 
-      onError(error) {
-        console.log(`ERROR ${error}`);
-      },
-    }); 
+      {
+        onSuccess: () => {
+          utils.invalidateQueries(["question.byClassroom"]);
+          utils.invalidateQueries(["question.bySearchStr"]);
+        },
+        onError(error) {
+          console.log(`ERROR ${error}`);
+        },
+      });
     setNewQuestionBody("");
     setNewQuestionTitle("");
     setShow(false);
   }
 
-  // const [meetings, setMeetings] = useState([]);
-  // async function getMeetings() {
-  //   fetch('../api/meetings', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({
-  //       "classroomId": classroomId,
-  //       "get": true,
-  //     })
-  //   }).then(async response => setMeetings(await response.json()));
-  // }
-  // TODO: this needs to be a subscription or some kind of polling, so it updates when someone else hosts a meeting
-  //getMeetings();
+  const { data: meetings, status: meetingsStatus } = trpc.useQuery(
+    ['meeting.getForClassroom', { classroomId: classroomId }],
+    {
+      enabled: classroomStatus == "success" && classroom != undefined,
+    }
+  );
 
 
   if (sessionStatus != "authenticated") {
@@ -264,43 +255,42 @@ const ClassroomDetail: NextPage = () => {
         </Head>
 
         <Header session={session} status={sessionStatus}></Header>
-        
-        {sessionStatus == "authenticated" && (
-          <main>
-            <section className="container mx-auto flex flex-col items-left p-4">
-              {questions && 
-                <div className="overflow-auto max-h-[50rem]">
-                  <div className="py-2 text-4xl text-red-500 font-bold">
-                    Questions for {classroom.name}
-                  </div>
-                  Filter results: <input value={searchStr} onChange={(e) => setSearchStr(e.currentTarget.value)} type="text" className="text-gray-900 rounded"></input>
-                  {searchStr == "" &&
-                    <ul>
-                      {questions.map(question => (
-                        <li key={question.questionId}>
-                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
-                        </li>
-                      ))}
-                    </ul>
-                  }
-                  {(searchStr != "" && searchQuestions) &&
-                    <ul>
-                      {searchQuestions.map(question => (
-                        <li key={question.questionId}>
-                          <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
-                        </li>
-                      ))}
-                    </ul>
-                  }
+
+        <main>
+          <section className="container mx-auto flex flex-col items-left p-4">
+            {questions &&
+              <div className="overflow-auto max-h-[50rem]">
+                <div className="py-2 text-4xl text-red-500 font-bold">
+                  Questions for {classroom.name}
                 </div>
-              }
-              { !questions && 
-                <div className="py-2 text-2xl text-red-500">
-                  No questions yet!
-                </div>
-              }
-              <button onClick={showModal} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Ask a Question</button>
-              {show &&
+                Filter results: <input value={searchStr} onChange={(e) => setSearchStr(e.currentTarget.value)} type="text" className="text-gray-900 rounded"></input>
+                {searchStr == "" &&
+                  <ul>
+                    {questions.map(question => (
+                      <li key={question.questionId}>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
+                      </li>
+                    ))}
+                  </ul>
+                }
+                {(searchStr != "" && searchQuestions) &&
+                  <ul>
+                    {searchQuestions.map(question => (
+                      <li key={question.questionId}>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
+                      </li>
+                    ))}
+                  </ul>
+                }
+              </div>
+            }
+            {!questions &&
+              <div className="py-2 text-2xl text-red-500">
+                No questions yet!
+              </div>
+            }
+            <button onClick={showModal} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Ask a Question</button>
+            {show &&
               <div
                 className="fixed w-2/4 left-1/4 top-20"
                 onClick={e => {
@@ -337,45 +327,44 @@ const ClassroomDetail: NextPage = () => {
                     </div>}
                 </div>
               </div>}
-            </section>
-            <section className="container mx-auto h-5/6 flex flex-col items-left p-4">
-              <div className="flex flex-row">
-                <h1 className="text-lg leading-normal p-4 flex-grow">
-                  <span className="text-red-500">Users for </span>
-                  <span>{classroom.name} </span>
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+          </section>
+          <section className="container mx-auto h-5/6 flex flex-col items-left p-4">
+            <div className="flex flex-row">
+              <h1 className="text-lg leading-normal p-4 flex-grow">
+                <span className="text-red-500">Users for </span>
+                <span>{classroom.name} </span>
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                 ${classroom.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-                  >
-                    {classroom.active ? 'Active' : 'Inactive'}
-                  </span>
-                </h1>
-                {currentUserRole == UserRole.INSTRUCTOR &&
-                  <ClassroomSettingsDropdown onArchiveClassroom={onArchiveClassroom} onDeleteClassroom={onDeleteClassroom}></ClassroomSettingsDropdown>
-                }
-              </div>
-              <UserTable
-                users={allUsersSectioned}
-                currentUserRole={currentUserRole}
-                onAddUser={addUserToClassroom}
-                onRemoveUser={removeUserFromClassroom}
-              ></UserTable>
+                >
+                  {classroom.active ? 'Active' : 'Inactive'}
+                </span>
+              </h1>
+              {currentUserRole == UserRole.INSTRUCTOR &&
+                <ClassroomSettingsDropdown onArchiveClassroom={onArchiveClassroom} onDeleteClassroom={onDeleteClassroom}></ClassroomSettingsDropdown>
+              }
+            </div>
+            <UserTable
+              users={allUsersSectioned}
+              currentUserRole={currentUserRole}
+              onAddUser={addUserToClassroom}
+              onRemoveUser={removeUserFromClassroom}
+            ></UserTable>
 
-              {/* TODO: better way to join and host meetings */}
-              {(currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
+            {/* TODO: better way to join and host meetings */}
+            {
+              (currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
                 <Link className="btn" href={"/meeting/host?classroomid=" + classroom.id}>Host a meeting</Link>
-              )}
-              {/* {meetings[0] ?
-                <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
-                : <p>No meetings</p>
-              } */}
-            </section>
-          </main>
-        )}
-        {sessionStatus != "authenticated" &&
-          <main className="max-h-[50rem] min-h-[50rem]">
-            It seems you aren&apos;t logged in. Please return to <Link href={'/'}><a className="text-red-500 hover:text-decoration-underline">the home page</a></Link> to sign in, then try again.
-          </main>
-        }
+              )
+            }
+            {/* display list if not undefined or empty */}
+            {meetings?.at(0) ?
+              <Link className="btn" href={"/meeting/join?hostid=" + meetings[0]}>Join a meeting</Link>
+              : <p>No meetings</p>
+            }
+          </section >
+        </main >
+
+
         <Footer></Footer>
       </div>
     </>

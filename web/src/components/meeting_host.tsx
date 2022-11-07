@@ -10,6 +10,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
     const [peers, setPeers] = useState<string[]>([]);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [call, setCall] = useState<MediaConnection | undefined>(undefined);
+
     peer.on('open', (id) => {
         console.log("My peer ID is: " + id);
         setPeerid(id);
