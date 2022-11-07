@@ -36,7 +36,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
         await addAnswer.mutateAsync(
             {
               questionId: props.question.questionId,
-              userId: props.user.id,
+              userId: data?.user?.id as string,
               answerStr: replyText,
             },
             {
@@ -118,13 +118,22 @@ export default function QuestionBox(props: QuestionBoxProps) {
 
 
             { props.answers.length > 0 &&
-                <ul>
-                    {props.answers.map(answer => (
-                        <li className="p-1 m-auto" key={answer.answerId}>
-                            <ReplyBox parent={props.question} nestings={0} MAX_NESTINGS={2} answer={answer} user={answer.user} currentUserRole={props.currentUserRole}></ReplyBox>
-                        </li>
-                    ))}
-                </ul>
+                <div>
+                    <ul>
+                        {props.answers.map(answer => (
+                            <li className="p-1 m-auto" key={answer.answerId}>
+                                <ReplyBox parent={props.question} nestings={0} MAX_NESTINGS={2} answer={answer} user={answer.user} currentUserRole={props.currentUserRole}></ReplyBox>
+                            </li>
+                        ))}
+                    </ul>
+                    {replying && 
+                        <div className="p-2">
+                            <textarea onChange={(e) => setReplyText(e.currentTarget.value)} value={replyText} placeholder="Type your answer..." className="text-gray-900 border rounded-md border-black min-w-full"></textarea>
+                            <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => addAnswerToQuestion()}>Submit</button>
+                            <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2" onClick={() => setReplying(false)}>Cancel</button>
+                        </div>
+                    }
+                </div>
             }
             { props.answers.length == 0 &&
                 <div className="p-">
