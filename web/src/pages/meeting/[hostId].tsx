@@ -9,6 +9,8 @@ const MeetingParticipant = dynamic(() => import('@/components/meeting_participan
 
 const JoinMeeting: NextPage = () => {
 
+    // TODO: Add session
+    
     const { isReady, query } = useRouter();
 
     return (

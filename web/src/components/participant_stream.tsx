@@ -54,14 +54,14 @@ export default function ParticipantStream(props: {
     }
 
     return (
-        <div>
-            <div className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
-                <video className="card" ref={remoteStreamView} autoPlay playsInline></video>
+        <>
+            <div className="bg-black">
+                <video className="card w-[480px]" ref={remoteStreamView} autoPlay playsInline></video>
                 <div className="button-group">
                     <button className={remoteAudio ? "btn btn-success" : "btn btn-error"} onClick={() => toggleRemoteAudio(participantStream)}>Toggle Sound</button>
                     <button className={remoteVideo ? "btn btn-success" : "btn btn-error"} onClick={() => toggleRemoteVideo(participantStream)}>Toggle Video</button>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
