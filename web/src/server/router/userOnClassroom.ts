@@ -2,7 +2,7 @@ import { Prisma, UserRole } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
-import { createRouter, createProtectedRouter } from "./context";
+import { createProtectedRouter, createRouter } from "./context";
 
 const defaultUserOnClassroomSelect = Prisma.validator<Prisma.UserOnClassroomSelect>()({
     user: true,
@@ -73,9 +73,9 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const results = await prisma.userOnClassroom.findFirst({
-                where: { 
+                where: {
                     classroomId: input.classroomId,
-                    userId: input.userId 
+                    userId: input.userId
                 },
                 select: defaultUserOnClassroomSelect,
             });
@@ -104,9 +104,9 @@ const authRoutes = createProtectedRouter()
         async resolve({ input, ctx }) {
 
             await prisma.userOnClassroom.deleteMany({
-                where: { 
+                where: {
                     userId: input.userId,
-                    classroomId: input.classroomId 
+                    classroomId: input.classroomId
                 },
             });
         },
@@ -120,7 +120,7 @@ const authRoutes = createProtectedRouter()
         async resolve({ input, ctx }) {
 
             await prisma.userOnClassroom.create({
-                data: { 
+                data: {
                     userId: input.userId,
                     classroomId: input.classroomId,
                     role: input.role,

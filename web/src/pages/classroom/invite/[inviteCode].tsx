@@ -1,35 +1,32 @@
-import type { GetServerSidePropsContext, NextPage } from "next";
-import Head from "next/head";
-import Header from "../../../components/header"
-import Footer from "../../../components/footer"
-import { Classroom, UserRole } from '@prisma/client';
-import React from "react";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { authOptions } from "../../api/auth/[...nextauth]";
-import { unstable_getServerSession, User } from "next-auth";
-import { useRouter } from "next/router";
 import { trpc } from "@/src/utils/trpc";
+import { UserRole } from '@prisma/client';
+import type { NextPage } from "next";
+import { useSession } from "next-auth/react";
+import Head from "next/head";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import Footer from "../../../components/footer";
+import Header from "../../../components/header";
 
 const JoinClassroomPage: NextPage = () => {
-  const {data, status} = useSession();
+  const { data, status } = useSession();
   const router = useRouter();
   const inviteCode = router.query.inviteCode as string;
 
-  const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byInviteCode', {inviteCode: inviteCode}],
+  const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byInviteCode', { inviteCode: inviteCode }],
     {
       enabled: router.query.inviteCode != undefined,
     }
-  ); 
+  );
 
-  const { data: currentRelationship, status: currentRelationshipStatus } = trpc.useQuery(['userOnClassroom.byClassroomAndUserId', { classroomId: classroom?.id as string, userId: data?.user?.id as string}],
+  const { data: currentRelationship, status: currentRelationshipStatus } = trpc.useQuery(['userOnClassroom.byClassroomAndUserId', { classroomId: classroom?.id as string, userId: data?.user?.id as string }],
     {
       enabled: data?.user?.id != undefined && classroom != undefined,
     }
   );
 
-  if(status == "authenticated" && classroom && currentRelationship) {
-    router.push('/classroom/'+classroom.id);
+  if (status == "authenticated" && classroom && currentRelationship) {
+    router.push('/classroom/' + classroom.id);
   }
 
   const addUserToClassroom = trpc.useMutation('userOnClassroom.create');
@@ -42,7 +39,7 @@ const JoinClassroomPage: NextPage = () => {
         role: UserRole.STUDENT,
       },
       {
-        onSuccess: () => router.push('/classroom/'+classroom?.id),
+        onSuccess: () => router.push('/classroom/' + classroom?.id),
         onError(error) {
           console.log(`userTable: ERROR: ${error}`);
         },
@@ -67,7 +64,7 @@ const JoinClassroomPage: NextPage = () => {
               <span className="text-red-500">Join {classroom.name}?</span>
             </h1>
             <button onClick={joinClassroom} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Join</button>
-            
+
           </main>}
 
         {status != "authenticated" &&

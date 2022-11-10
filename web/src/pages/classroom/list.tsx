@@ -1,13 +1,12 @@
-import type { NextPage } from "next";
-import Head from "next/head";
-import Header from "../../components/header"
-import Footer from "../../components/footer"
 import ClassroomTable from "@/src/components/classroomTable";
-import { useCallback, useState } from "react";
+import { inferQueryOutput, trpc } from '@/src/utils/trpc';
+import type { NextPage } from "next";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Link from "next/link";
-import { trpc, inferQueryOutput } from '@/src/utils/trpc';
-import { UserRole } from "@prisma/client";
+import { useCallback, useState } from "react";
+import Footer from "../../components/footer";
+import Header from "../../components/header";
 
 const ClassroomList: NextPage = () => {
   const { data: session, status: sessionStatus } = useSession();

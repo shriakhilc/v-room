@@ -1,5 +1,15 @@
-import React, { useState, useRef } from 'react';
-export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; host?: boolean; classroomid?: string; peerid?: string; }) {
+import { useRef, useState } from 'react';
+import { trpc } from '../utils/trpc';
+
+interface LocalStreamManagerProps {
+    setLocalStream: (arg0: MediaStream) => void,
+    localStream: MediaStream | null,
+    host?: boolean,
+    classroomid?: string,
+    peerid?: string,
+}
+
+export default function LocalStreamManager(props: LocalStreamManagerProps) {
     const [playing, setPlaying] = useState(false);
 
     const [localAudio, setLocalAudio] = useState(true);
@@ -7,10 +17,14 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
 
     const localStreamView = useRef<HTMLVideoElement | null>(null);
 
+    const addMeetingToClassroom = trpc.useMutation('meeting.addToClassroom');
+
+
     const startStream = async () => {
         if (navigator?.mediaDevices !== undefined) { //TODO: handle this, may occur when not inside secure contexts
             await navigator.mediaDevices
                 .getUserMedia({ //TODO: display a notice/reason for rejection
+                    // this indicates that stream must support both
                     video: true,
                     audio: true,
                 })
@@ -24,15 +38,7 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
                 });
             setPlaying(true);
             if (props.host) {
-                fetch('../api/meetings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        "classroomId": props.classroomid,
-                        "meetingId": props.peerid,
-                        "add": true,
-                    })
-                });
+                await addMeetingToClassroom.mutateAsync({ classroomId: props.classroomid!, meetingId: props.peerid! });
             }
         }
     };
@@ -72,8 +78,9 @@ export default function LocalStreamManager(props: { setLocalStream: (arg0: Media
     }
 
     return (
-        <div className="w-4/12">
-            <video className="card" ref={localStreamView} autoPlay playsInline muted></video>
+        <div className="bg-black">
+            {/* TODO: Better way than fixed width? */}
+            <video className="card w-[480px]" ref={localStreamView} autoPlay playsInline muted></video>
             <div className="btn-group btn-group-horizontal">
                 <button className={playing ? "btn btn-success" : "btn btn-error"}
                     onClick={playing ? stopStream : startStream}>
