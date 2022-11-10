@@ -11,8 +11,6 @@ const peer = new Peer();
 
 export default function MeetingHost(props: { classroomid: string; }) {
     const [hostId, setHostId] = useState('')
-    //const [dataConnections, setDataConnections] = useState<DataConnection[]>([]);
-    //const [mediaConnections, setMediaConnections] = useState<MediaConnection[]>([]);
     // Maintains order of insertion by default
     const [participantMap, setPartipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -70,7 +68,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
                     };
 
                     conn.send(payload);
-                    setMessages(m => [...m, payload.data])
+                    setMessages(m => [...m, payload.data]);
                 });
 
                 // Creates new shallow Map using prev map + new conn
@@ -181,5 +179,5 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 </div>
             </div>
         </main>
-    )
+    );
 }

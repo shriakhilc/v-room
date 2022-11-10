@@ -1,7 +1,7 @@
 import Peer from 'peerjs';
 import { useRef, useState } from 'react';
 
-export default function HostStream(props: { peer: Peer; peerid: string | undefined; localStream: MediaStream | null; }) {
+export default function HostStream(props: { peer: Peer; peerid: string; localStream: MediaStream | null; }) {
     const [hostStream, setHostStream] = useState<MediaStream | null>(null);
 
     const [remoteAudio, setRemoteAudio] = useState(true);
