@@ -1,8 +1,8 @@
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
-import Peer, { DataConnection, MediaConnection } from 'peerjs';
+import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
-import { ChatMessage, DataEvent, DataPayload } from '../utils/meetings';
+import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
@@ -11,9 +11,11 @@ const peer = new Peer();
 
 export default function MeetingHost(props: { classroomid: string; }) {
     const [hostId, setHostId] = useState('')
-    const [dataConnections, setDataConnections] = useState<DataConnection[]>([]);
+    //const [dataConnections, setDataConnections] = useState<DataConnection[]>([]);
+    //const [mediaConnections, setMediaConnections] = useState<MediaConnection[]>([]);
+    // Maintains order of insertion by default
+    const [participantMap, setPartipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-    const [mediaConnections, setMediaConnections] = useState<MediaConnection[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
     const copyInviteLink = useCallback(
@@ -71,8 +73,15 @@ export default function MeetingHost(props: { classroomid: string; }) {
                     setMessages(m => [...m, payload.data])
                 });
 
-                // TODO: Use a better structure for updates (maybe queue with auxiliary set)
-                setDataConnections([...dataConnections, conn]);
+                // Creates new shallow Map using prev map + new conn
+                setPartipantMap((prev) => (
+                    new Map(
+                        prev.set(conn.peer, {
+                            name: conn.metadata.name,
+                            dataConn: conn,
+                        })
+                    )
+                ));
             };
 
             peer.on('connection', onNewConnection);
@@ -82,14 +91,23 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 peer.off('connection', onNewConnection);
             }
         },
-        [dataConnections]
+        []
     );
 
     const callParticipant = useCallback(
-        (conn: DataConnection) => {
+        (participantInfo: ParticipantInfo) => {
             if (localStream != null) {
-                console.log(`Calling ${conn.peer}`);
-                setMediaConnections((prev) => [...prev, peer.call(conn.peer, localStream)]);
+                const peerId = participantInfo.dataConn.peer;
+                console.log(`Calling ${peerId}`);
+
+                setPartipantMap((prev) => (
+                    new Map(
+                        prev.set(peerId, {
+                            ...participantInfo,
+                            mediaConn: peer.call(peerId, localStream),
+                        })
+                    )
+                ));
             }
         },
         [localStream]
@@ -107,14 +125,15 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 },
             };
 
-            // Sending to everyone in the meeting
-            // TODO: This shouldn't go to those who haven't been added in yet
-            dataConnections.forEach((conn: DataConnection) => {
-                conn.send(payload);
+            // Sending to only those who joined the meeting, not those in waiting room
+            participantMap.forEach(({ dataConn, mediaConn }) => {
+                if (mediaConn !== undefined) {
+                    dataConn.send(payload);
+                }
             });
             setMessages(m => [...m, payload.data])
         },
-        [dataConnections]
+        [participantMap]
     );
 
 
@@ -123,8 +142,9 @@ export default function MeetingHost(props: { classroomid: string; }) {
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
                     <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={hostId} />
-                    {mediaConnections.map((mediaConn: MediaConnection) => (
-                        <ParticipantStream key={mediaConn.peer} peer={peer} peerid={mediaConn.peer} localStream={localStream} call={mediaConn} />
+                    {Array.from(participantMap, ([peerId, { mediaConn }]) => (
+                        (mediaConn !== undefined) &&
+                        <ParticipantStream key={peerId} peer={peer} peerid={peerId} localStream={localStream} call={mediaConn} />
                     ))}
                 </div>
 
@@ -134,11 +154,11 @@ export default function MeetingHost(props: { classroomid: string; }) {
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
                 {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
                 <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
-                    <p className='text-lg font-semibold'>Participants ({dataConnections.length})</p>
+                    <p className='text-lg font-semibold'>Participants ({participantMap.size})</p>
 
                     <div className='flex flex-col grow overflow-y-auto'>
-                        {dataConnections.map((conn: DataConnection) => (
-                            <ParticipantDisplay key={conn.peer} name={conn.metadata.name} answerCall={() => callParticipant(conn)}></ParticipantDisplay>
+                        {Array.from(participantMap, ([peerId, participantInfo]) => (
+                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)}></ParticipantDisplay>
                         ))}
                     </div>
 
