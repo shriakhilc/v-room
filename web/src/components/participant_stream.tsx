@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
 import Peer, { MediaConnection } from 'peerjs';
+import { useRef, useState } from 'react';
 
 export default function ParticipantStream(props: {
     call: MediaConnection | undefined;

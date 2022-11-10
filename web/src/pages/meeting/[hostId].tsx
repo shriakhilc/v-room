@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
-import { useRouter } from "next/router"
-import Head from "next/head";
 import dynamic from "next/dynamic";
+import Head from "next/head";
+import { useRouter } from "next/router";
 
 const MeetingParticipant = dynamic(() => import('@/components/meeting_participant'), {
     ssr: false,
@@ -10,7 +10,7 @@ const MeetingParticipant = dynamic(() => import('@/components/meeting_participan
 const JoinMeeting: NextPage = () => {
 
     // TODO: Add session
-    
+
     const { isReady, query } = useRouter();
 
     return (

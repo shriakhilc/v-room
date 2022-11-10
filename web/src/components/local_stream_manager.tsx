@@ -1,7 +1,15 @@
-import React, { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
-export default function LocalStreamManager(props: { setLocalStream: (arg0: MediaStream) => void; localStream: MediaStream | null; host?: boolean; classroomid?: string; peerid?: string; }) {
+interface LocalStreamManagerProps {
+    setLocalStream: (arg0: MediaStream) => void,
+    localStream: MediaStream | null,
+    host?: boolean,
+    classroomid?: string,
+    peerid?: string,
+}
+
+export default function LocalStreamManager(props: LocalStreamManagerProps) {
     const [playing, setPlaying] = useState(false);
 
     const [localAudio, setLocalAudio] = useState(true);

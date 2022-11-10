@@ -13,8 +13,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
     const [hostId, setHostId] = useState('')
     const [dataConnections, setDataConnections] = useState<DataConnection[]>([]);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-    // TODO: Call[]
-    const [call, setCall] = useState<MediaConnection | undefined>(undefined);
+    const [mediaConnections, setMediaConnections] = useState<MediaConnection[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
     const copyInviteLink = useCallback(
@@ -90,7 +89,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
         (conn: DataConnection) => {
             if (localStream != null) {
                 console.log(`Calling ${conn.peer}`);
-                setCall(peer.call(conn.peer, localStream));
+                setMediaConnections((prev) => [...prev, peer.call(conn.peer, localStream)]);
             }
         },
         [localStream]
@@ -124,9 +123,8 @@ export default function MeetingHost(props: { classroomid: string; }) {
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
                     <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={hostId} />
-                    {dataConnections.map((conn: DataConnection) => (
-                        call !== undefined &&
-                        <ParticipantStream peer={peer} peerid={conn.peer} localStream={localStream} call={call} />
+                    {mediaConnections.map((mediaConn: MediaConnection) => (
+                        <ParticipantStream key={mediaConn.peer} peer={peer} peerid={mediaConn.peer} localStream={localStream} call={mediaConn} />
                     ))}
                 </div>
 
