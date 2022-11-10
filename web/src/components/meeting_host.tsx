@@ -1,91 +1,166 @@
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
 import Peer, { DataConnection, MediaConnection } from 'peerjs';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import MeetingParticipant from './meeting_participant';
+import MessageDisplay, { ChatMessage, DataEvent, DataPayload } from './MessageDisplay';
+import MessageInput from './MessageInput';
+import ParticipantDisplay from './ParticipantDisplay';
 
 const peer = new Peer();
 
 export default function MeetingHost(props: { classroomid: string; }) {
-    const [peerid, setPeerid] = useState('')
-    const [peers, setPeers] = useState<string[]>([]);
+    const [hostId, setHostId] = useState('')
+    const [dataConnections, setDataConnections] = useState<DataConnection[]>([]);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    // TODO: Call[]
     const [call, setCall] = useState<MediaConnection | undefined>(undefined);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-    const onPeerOpen = useCallback(
-        (id: string) => {
-            console.log("My peer ID is: " + id);
-            setPeerid(id);
+    const copyInviteLink = useCallback(
+        () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostId}`) },
+        [hostId]
+    );
+
+    useEffect(
+        () => {
+            const onPeerOpen = (id: string) => {
+                console.log("My peer ID is: " + id);
+                setHostId(id);
+            };
+            peer.on('open', onPeerOpen);
+            // unsubscribe this specific listener
+            return () => {
+                peer.off('open', onPeerOpen);
+            }
         },
         []
     );
 
-    const onNewConnection = useCallback(
-        (conn: DataConnection) => {
-            console.log(`onNewConnection: From ${conn.peer} is${conn.open ? 'open' : 'not open'}`);
-            conn.on("data", (data) => {
-                console.log("from " + conn.metadata?.name + " at " + conn.peer + " " + data);
-                setPeers([...peers, conn.peer]);
-            });
-            conn.on("open", () => {
-                conn.send("hello!");
-            });
+    useEffect(
+        () => {
+            const onNewConnection = (conn: DataConnection) => {
+                // Note: conn.peer is available even if conn isn't open yet
+                conn.on("data", (data) => {
+                    const payload = data as DataPayload;
+                    switch (payload.event) {
+                        case DataEvent.CHAT_MESSAGE: {
+                            setMessages(prev => [...prev, payload.data]);
+                            break;
+                        }
+
+                        default: {
+                            // Do nothing on unknown events
+                            console.error(`Unknown event received: ${data}`);
+                            break;
+                        }
+                    }
+                });
+
+                conn.on("open", () => {
+                    // Auto sending a message to every new connection
+                    const payload: DataPayload = {
+                        event: DataEvent.CHAT_MESSAGE,
+                        data: {
+                            senderName: "Meeting Host",
+                            timestamp: Date.now(),
+                            message: "hello!"
+                        },
+                    };
+
+                    conn.send(payload);
+                    setMessages(m => [...m, payload.data])
+                });
+
+                // TODO: Use a better structure for updates (maybe queue with auxiliary set)
+                setDataConnections([...dataConnections, conn]);
+            };
+
+            peer.on('connection', onNewConnection);
+
+            // unsubscribe this specific listener
+            return () => {
+                peer.off('connection', onNewConnection);
+            }
         },
-        [peers]
+        [dataConnections]
     );
 
-    const copyInviteLink = useCallback(
-        () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${peerid}`) },
-        [peerid]
+    const callParticipant = useCallback(
+        (conn: DataConnection) => {
+            if (localStream != null) {
+                console.log(`Calling ${conn.peer}`);
+                setCall(peer.call(conn.peer, localStream));
+            }
+        },
+        [localStream]
     );
 
-    peer.on('open', onPeerOpen);
-    peer.on('connection', onNewConnection);
+    const sendMessageToAll = useCallback(
+        (msg: string) => {
+            // TODO: Get user's name here
+            const payload: DataPayload = {
+                event: DataEvent.CHAT_MESSAGE,
+                data: {
+                    senderName: "Meeting Host",
+                    timestamp: Date.now(),
+                    message: msg,
+                },
+            };
 
-    console.log("peers " + peers.length)
-    function callParticipant(participant_idx: number) {
-        const to_call = peers[participant_idx]
-        if (to_call !== undefined && localStream != null) {
-            setCall(peer.call(to_call, localStream));
-            console.log("calling " + to_call);
-        }
-    }
+            // Sending to everyone in the meeting
+            // TODO: This shouldn't go to those who haven't been added in yet
+            dataConnections.forEach((conn: DataConnection) => {
+                conn.send(payload);
+            });
+            setMessages(m => [...m, payload.data])
+        },
+        [dataConnections]
+    );
+
 
     return (
-        <main className="container mx-auto flex flex-row h-screen w-screen">
+        <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
-                <div id="video_grid" className='flex flex-row flex-wrap bg-rose-500 overflow-auto grow gap-1 p-1 justify-evenly content-start'>
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={peerid} />
-                    <ParticipantStream peer={peer} peerid={peers[0]} localStream={localStream} call={call} />
+                <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={hostId} />
+                    {dataConnections.map((conn: DataConnection) => (
+                        call !== undefined &&
+                        <ParticipantStream peer={peer} peerid={conn.peer} localStream={localStream} call={call} />
+                    ))}
                 </div>
 
-                <div id="bottom_controls" className='bg-green-500 shrink-0 basis-1/6'></div>
+                <div id="bottom_controls" className='shrink-0 basis-1/6'></div>
             </div>
 
-            <div id="sidebar" className='flex flex-col shrink-0 basis-1/4 divide-y divide-solid divide-gray-500 space-y-2'>
-                <div id="participants" className='flex flex-col basis-1/2 pb-1'>
-                    <p className='text-lg font-semibold'>Participants</p>
-                    <ul className='list-none list-inside grow overflow-auto'>
-                        {peers.map((participant_id, idx) => (
-                            <li key={idx}>{participant_id}</li>
+            <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
+                {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
+                <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
+                    <p className='text-lg font-semibold'>Participants ({dataConnections.length})</p>
+
+                    <div className='flex flex-col grow overflow-y-auto'>
+                        {dataConnections.map((conn: DataConnection) => (
+                            <ParticipantDisplay key={conn.peer} name={conn.metadata.name} answerCall={() => callParticipant(conn)}></ParticipantDisplay>
                         ))}
-                    </ul>
-                    {/* TODO: Remove direct URL display */}
-                    <p>Host ID: {peerid}</p>
-                    <div className='flex flex-row justify-evenly'>
-                        <button onClick={copyInviteLink}
-                            className="btn normal-case p-1 bg-transparent border border-white hover:border-white border-solid hover:bg-gray-700"
-                        >
-                            Copy Invite Link
-                        </button>
-                        <button onClick={() => callParticipant(0)}
-                            className="btn normal-case p-1 bg-transparent border border-white hover:border-white border-solid hover:bg-gray-700"
-                        >
-                            Bring Student In
-                        </button>
                     </div>
+
+                    {/* TODO: Remove direct URL display */}
+                    <p>Host ID: {hostId}</p>
+                    <button onClick={copyInviteLink}
+                        className="btn normal-case p-1 bg-transparent border border-white hover:border-white border-solid hover:bg-gray-700"
+                    >
+                        Copy Invite Link
+                    </button>
                 </div>
-                <div id="chat" className='basis-1/2 overflow-auto'>
+
+                <div id="chat" className='flex flex-col grow overflow-y-auto'>
                     <p className='text-lg mt-2 font-semibold'>Chat</p>
+                    <div className='flex flex-col grow overflow-y-auto'>
+                        {messages.map((msg) => (
+                            <MessageDisplay key={`${msg.senderName}_${msg.timestamp}`} message={msg}></MessageDisplay>
+                        ))}
+                    </div>
+                    <MessageInput onSend={sendMessageToAll}></MessageInput>
                 </div>
             </div>
         </main>
