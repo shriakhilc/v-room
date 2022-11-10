@@ -48,6 +48,10 @@ export default function MeetingParticipant({ hostid }: MeetingParticipantProps) 
                     }
                 });
 
+                conn.on('close', () => {
+                    console.log(`Closing data conn with host ${conn.peer}`);
+                })
+
                 conn.on("open", () => {
                     const payload: DataPayload = {
                         event: DataEvent.CHAT_MESSAGE,
@@ -71,6 +75,16 @@ export default function MeetingParticipant({ hostid }: MeetingParticipantProps) 
             }
         },
         [hostid]
+    );
+
+    const closeHostConn = useCallback(
+        () => {
+            if (hostConn !== undefined) {
+                console.log(`Closing connection with host ${hostConn.peer}`);
+                hostConn.close();
+            }
+        },
+        [hostConn]
     );
 
     const sendMessageToAll = useCallback(

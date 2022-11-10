@@ -3,6 +3,7 @@ import ParticipantStream from '@/src/components/participant_stream';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
+import { trpc } from '../utils/trpc';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
@@ -16,24 +17,31 @@ export default function MeetingHost(props: { classroomid: string; }) {
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+    const addMeetingToClassroom = trpc.useMutation('meeting.addToClassroom');
+
     const copyInviteLink = useCallback(
         () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostId}`) },
         [hostId]
     );
 
+    const onPeerOpen = useCallback(
+        (id: string) => {
+            console.log("My peer ID is: " + id);
+            addMeetingToClassroom.mutate({ classroomId: props.classroomid, meetingId: id });
+            setHostId(id);
+        },
+        [addMeetingToClassroom, props]
+    );
+
     useEffect(
         () => {
-            const onPeerOpen = (id: string) => {
-                console.log("My peer ID is: " + id);
-                setHostId(id);
-            };
             peer.on('open', onPeerOpen);
             // unsubscribe this specific listener
             return () => {
                 peer.off('open', onPeerOpen);
             }
         },
-        []
+        [onPeerOpen]
     );
 
     useEffect(
@@ -70,6 +78,16 @@ export default function MeetingHost(props: { classroomid: string; }) {
                     conn.send(payload);
                     setMessages(m => [...m, payload.data]);
                 });
+
+                conn.on('close', () => {
+                    // Remove participant from map
+                    console.log(`Closing data conn ${conn.peer}`);
+                    setPartipantMap((prev) => {
+                        const newMap = new Map(prev);
+                        newMap.delete(conn.peer);
+                        return newMap;
+                    });
+                })
 
                 // Creates new shallow Map using prev map + new conn
                 setPartipantMap((prev) => (

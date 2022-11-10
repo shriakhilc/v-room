@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import { trpc } from '../utils/trpc';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface LocalStreamManagerProps {
     setLocalStream: (arg0: MediaStream) => void,
@@ -12,36 +11,70 @@ interface LocalStreamManagerProps {
 export default function LocalStreamManager(props: LocalStreamManagerProps) {
     const [playing, setPlaying] = useState(false);
 
-    const [localAudio, setLocalAudio] = useState(true);
+    const [localAudio, setLocalAudio] = useState(false);
     const [localVideo, setLocalVideo] = useState(true);
 
     const localStreamView = useRef<HTMLVideoElement | null>(null);
 
-    const addMeetingToClassroom = trpc.useMutation('meeting.addToClassroom');
 
 
-    const startStream = async () => {
-        if (navigator?.mediaDevices !== undefined) { //TODO: handle this, may occur when not inside secure contexts
-            await navigator.mediaDevices
-                .getUserMedia({ //TODO: display a notice/reason for rejection
-                    // this indicates that stream must support both
-                    video: true,
-                    audio: true,
-                })
-                .then((newStream) => {
-                    if (localStreamView?.current !== null) {
-                        props.setLocalStream(newStream);
-                        toggleLocalAudio(newStream, localAudio);
-                        toggleLocalVideo(newStream, localVideo);
-                        localStreamView.current.srcObject = newStream;
-                    }
-                });
-            setPlaying(true);
-            if (props.host) {
-                await addMeetingToClassroom.mutateAsync({ classroomId: props.classroomid!, meetingId: props.peerid! });
+    const toggleLocalAudio = useCallback(
+        (stream: MediaStream | null, enabled?: boolean) => {
+            let current = localAudio
+            if (enabled !== undefined) {
+                setLocalAudio(enabled)
+            } else {
+                current = !current
             }
-        }
-    };
+            setLocalAudio(current)
+            if (stream !== null) {
+                stream.getAudioTracks().forEach((track) => track.enabled = current)
+            }
+        },
+        [localAudio]
+    );
+
+    const toggleLocalVideo = useCallback(
+        (stream: MediaStream | null, enabled?: boolean) => {
+            let current = localVideo
+            if (enabled !== undefined) {
+                current = enabled
+            } else {
+                current = !current
+            }
+            setLocalVideo(current)
+            if (stream !== null) {
+                stream.getVideoTracks().forEach((track) => track.enabled = current)
+            }
+        },
+        [localVideo]
+    );
+
+    useEffect(
+        () => {
+            if (!playing) {
+                if (navigator?.mediaDevices !== undefined) { //TODO: handle this, may occur when not inside secure contexts
+                    navigator.mediaDevices
+                        .getUserMedia({ //TODO: display a notice/reason for rejection
+                            // this indicates that stream must support both
+                            video: true,
+                            audio: true,
+                        })
+                        .then((newStream) => {
+                            if (localStreamView?.current !== null) {
+                                console.log('setting localstream');
+                                props.setLocalStream(newStream);
+                                toggleLocalAudio(newStream, false);
+                                toggleLocalVideo(newStream, true);
+                                localStreamView.current.srcObject = newStream;
+                            }
+                        });
+                    setPlaying(true);
+                }
+            }
+        },
+        [props, playing, localStreamView, toggleLocalAudio, toggleLocalVideo]
+    );
 
     const stopStream = () => {
         if (props.localStream !== null) {
@@ -51,41 +84,15 @@ export default function LocalStreamManager(props: LocalStreamManagerProps) {
         //TODO: if host, update classroom to remove peerid as a meeting
     };
 
-    function toggleLocalAudio(stream: MediaStream | null, enabled?: boolean) {
-        let current = localAudio
-        if (enabled !== undefined) {
-            setLocalAudio(enabled)
-        } else {
-            current = !current
-        }
-        setLocalAudio(current)
-        if (stream !== null) {
-            stream.getAudioTracks().forEach((track) => track.enabled = current)
-        }
-    }
-
-    function toggleLocalVideo(stream: MediaStream | null, enabled?: boolean) {
-        let current = localVideo
-        if (enabled !== undefined) {
-            current = enabled
-        } else {
-            current = !current
-        }
-        setLocalVideo(current)
-        if (stream !== null) {
-            stream.getVideoTracks().forEach((track) => track.enabled = current)
-        }
-    }
-
     return (
         <div className="bg-black">
             {/* TODO: Better way than fixed width? */}
             <video className="card w-[480px]" ref={localStreamView} autoPlay playsInline muted></video>
             <div className="btn-group btn-group-horizontal">
-                <button className={playing ? "btn btn-success" : "btn btn-error"}
-                    onClick={playing ? stopStream : startStream}>
+                {/* <button className={playing ? "btn btn-success" : "btn btn-error"}
+                    onClick={stopStream}>
                     {playing ? (props.host ? "end meeting" : "leave meeting") : (props.host ? "start meeting" : "join meeting")}
-                </button>
+                </button> */}
                 <button className={localAudio ? "btn btn-success" : "btn btn-error"} onClick={() => toggleLocalAudio(props.localStream)}>
                     {localAudio ?
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 384 512" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="30" d="M192 0C139 0 96 43 96 96V256c0 53 43 96 96 96s96-43 96-96V96c0-53-43-96-96-96zM64 216c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 89.1 66.2 162.7 152 174.4V464H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h72 72c13.3 0 24-10.7 24-24s-10.7-24-24-24H216V430.4c85.8-11.7 152-85.3 152-174.4V216c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 70.7-57.3 128-128 128s-128-57.3-128-128V216z" /></svg> :
