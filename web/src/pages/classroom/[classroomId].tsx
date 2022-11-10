@@ -1,19 +1,18 @@
 import type { NextPage } from "next";
-import Head from "next/head";
-import React, { useMemo, useState } from "react";
-import { useRouter } from 'next/router';
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from 'next/router';
+import React, { useMemo } from "react";
 
 import { trpc } from '@/src/utils/trpc';
 
-import Header from "@/src/components/header"
-import Footer from "@/src/components/footer"
-import UserTable from "@/src/components/userTable";
 import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
-import { UserRole } from "@prisma/client";
-import ReplyBox from "@/src/components/ReplyBox";
+import Footer from "@/src/components/footer";
+import Header from "@/src/components/header";
 import QuestionBox from "@/src/components/QuestionBox";
+import UserTable from "@/src/components/userTable";
+import { UserRole } from "@prisma/client";
 
 const ClassroomDetail: NextPage = () => {
   const router = useRouter();
@@ -73,9 +72,7 @@ const ClassroomDetail: NextPage = () => {
         role: role
       },
       {
-        // TODO: Is this just router.reload() ? Can we do better by invalidating users
-        // TODO: Table not auto-updating could be due to unmount
-        onSuccess: () => router.replace(router.asPath),
+        onSuccess: () => utils.invalidateQueries(['classroom.sectionedUsers']),
         onError(error) {
           // Forbidden error based on user role, should not occur normally since menu only visible to instructors
           console.log(`userTable: ERROR: ${error}`);
@@ -92,8 +89,7 @@ const ClassroomDetail: NextPage = () => {
         userId: userId,
       },
       {
-        // TODO: Is this just router.reload() ? Can we do better by invalidating users
-        onSuccess: () => router.replace(router.asPath),
+        onSuccess: () => utils.invalidateQueries(['classroom.sectionedUsers']),
         onError(error) {
           // Forbidden error based on user role, should not occur normally since menu only visible to instructors
           console.log(`userTable: ERROR: ${error}`);
@@ -126,10 +122,7 @@ const ClassroomDetail: NextPage = () => {
 
   async function onArchiveClassroom() {
     await archiveClassroom.mutateAsync({ id: classroomId }, {
-      onSuccess() {
-        // TODO: would invalidating classroom.byId work to refresh page?
-        router.reload();
-      },
+      onSuccess: () => utils.invalidateQueries(['classroom.byId']),
       onError(error) {
         // Forbidden error based on user role, should not occur normally since menu only visible to instructors
         console.log(`pages/classroom/${classroomId}: ERROR: ${error}`);

@@ -1,18 +1,20 @@
 import { useCallback, useState } from "react";
 
+interface MessageInputProps {
+    onSend: (msg: string) => void,
+}
+
 export default function MessageInput(
-    props: {
-        onSend: (msg: string) => void
-    },
+    { onSend }: MessageInputProps,
 ) {
     const [message, setMessage] = useState("");
 
     const sendMessage = useCallback(
         () => {
-            props.onSend(message);
+            onSend(message);
             setMessage("");
         },
-        [message, props.onSend]
+        [message, onSend]
     );
 
     const messageEmpty = (message.trim() === "");

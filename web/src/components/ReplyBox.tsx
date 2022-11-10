@@ -1,8 +1,7 @@
-import { Answer, Classroom, Question, User, UserRole } from "@prisma/client";
+import { Answer, Question, User, UserRole } from "@prisma/client";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useContext, useState } from "react";
+import { useState } from "react";
 import { trpc } from "../utils/trpc";
 
 interface ReplyBoxProps {
@@ -23,7 +22,7 @@ export default function ReplyBox(props: ReplyBoxProps) {
     const [deleteConfirm, setDeleteConfirm] = useState(false);
     const router = useRouter();
     const utils = trpc.useContext();
-    const {data, status} = useSession();
+    const { data, status } = useSession();
     //const { data: answers, status: classroomStatus } = trpc.useQuery(['answer.nestedAnswers', { answerId: this.props.answer.answerId }]);
 
     const addAnswer = trpc.useMutation('answer.add');
@@ -33,18 +32,18 @@ export default function ReplyBox(props: ReplyBoxProps) {
     const addAnswerToQuestion = async () => {
         await addAnswer.mutateAsync(
             {
-              questionId: props.parent.questionId,
-              userId: props.user.id,
-              answerStr: replyText,
+                questionId: props.parent.questionId,
+                userId: props.user.id,
+                answerStr: replyText,
             },
             {
-              onSuccess: () => router.replace(router.asPath),
-              onError(error) {
-                // Forbidden error based on user role, should not occur normally since menu only visible to instructors
-                console.log(`Adding answer: ERROR: ${error}`);
-              },
+                onSuccess: () => router.replace(router.asPath),
+                onError(error) {
+                    // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                    console.log(`Adding answer: ERROR: ${error}`);
+                },
             }
-          );
+        );
         setReplyText("");
         setReplying(false);
     }
@@ -88,13 +87,13 @@ export default function ReplyBox(props: ReplyBoxProps) {
         );
     }
 
-    return( 
+    return (
         <div className="p-">
             <div className="text-gray-900 p-4 shadow-gray-900 shadow-md bg-gray-50 border-b border-gray-200 sm:rounded-lg overflow-auto max-h-[50rem]">
                 {!editing &&
                     <p className="py-2">{props.answer.answerStr}</p>
                 }
-                {editing && 
+                {editing &&
                     <div>
                         <textarea onChange={(e) => setAnswerText(e.currentTarget.value)} value={answerText} className="border rounded-md border-black min-w-full"></textarea>
                     </div>
@@ -102,30 +101,30 @@ export default function ReplyBox(props: ReplyBoxProps) {
                 <p className="py-2 text-grey-200 border-t-2 text-gray-500 border-gray-300"><>Posted by {props.user.name}</></p>
                 {!replying &&
                     <div className="flex">
-                        <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Reply to this Answer</button> 
+                        <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Reply to this Answer</button>
                         <div className="flex flex-1 items-end justify-end">
-                            { (!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                            {(!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
                                 <button onClick={() => setEditing(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Edit</button>
                             }
-                            { editing && 
+                            {editing &&
                                 <button onClick={() => onUpdateAnswer()} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Confirm</button>
                             }
-                            { (!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                            {(!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
                                 <button onClick={() => setDeleteConfirm(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2">Delete</button>
                             }
-                            { deleteConfirm && 
+                            {deleteConfirm &&
                                 <button onClick={() => onDeleteAnswer()} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2">Click Again to Delete</button>
                             }
                         </div>
                     </div>
                 }
-                {replying && 
+                {replying &&
                     <div>
                         <textarea onChange={(e) => setReplyText(e.currentTarget.value)} value={replyText} placeholder="Type your answer..." className="border rounded-md border-black min-w-full"></textarea>
-                        {replyText != "" && 
+                        {replyText != "" &&
                             <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(false)}>Submit</button>
                         }
-                        {replyText == "" && 
+                        {replyText == "" &&
                             <button disabled className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => addAnswerToQuestion()}>Submit</button>
                         }
                         <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2" onClick={() => setReplying(false)}>Cancel</button>

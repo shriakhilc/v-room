@@ -2,8 +2,8 @@ import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
 import Peer, { DataConnection, MediaConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
-import MeetingParticipant from './meeting_participant';
-import MessageDisplay, { ChatMessage, DataEvent, DataPayload } from './MessageDisplay';
+import { ChatMessage, DataEvent, DataPayload } from '../utils/meetings';
+import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
 
@@ -144,8 +144,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
                         ))}
                     </div>
 
-                    {/* TODO: Remove direct URL display */}
-                    <p>Host ID: {hostId}</p>
+                    {/* <p>Host ID: {hostId}</p> */}
                     <button onClick={copyInviteLink}
                         className="btn normal-case p-1 bg-transparent border border-white hover:border-white border-solid hover:bg-gray-700"
                     >

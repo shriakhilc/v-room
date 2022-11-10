@@ -1,4 +1,4 @@
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
@@ -23,46 +23,46 @@ const defaultAnswerSelect = Prisma.validator<Prisma.AnswerSelect>()({
 
 // Endpoints that do not need to authenticate user
 const publicRoutes = createRouter()
-.query('byId', {
-    input: z.object({
-        answerId: z.string().cuid(),
-    }),
-    async resolve({ input }) {
-        const { answerId } = input;
-        const answer = await prisma.answer.findUnique({
-            where: { answerId },
-            select: defaultAnswerSelect,
-        });
-        if (!answer) {
-            throw new TRPCError({
-                code: 'NOT_FOUND',
-                message: `No answer with id '${answerId}'`,
+    .query('byId', {
+        input: z.object({
+            answerId: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const { answerId } = input;
+            const answer = await prisma.answer.findUnique({
+                where: { answerId },
+                select: defaultAnswerSelect,
             });
-        }
-        return answer;
-    },
-})
-.query('nestedAnswers', {
-    input: z.object({
-        answerId: z.string().cuid(),
-    }),
-    async resolve({ input }) {
-        const { answerId } = input;
-        const nestedAnswers = await prisma.answer.findMany({
-            where: { questionId: answerId },
-            include: {
-                user: true
+            if (!answer) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: `No answer with id '${answerId}'`,
+                });
             }
-        });
-        if (!nestedAnswers) {
-            throw new TRPCError({
-                code: 'NOT_FOUND',
-                message: `No replies for id '${answerId}'`,
+            return answer;
+        },
+    })
+    .query('nestedAnswers', {
+        input: z.object({
+            answerId: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const { answerId } = input;
+            const nestedAnswers = await prisma.answer.findMany({
+                where: { questionId: answerId },
+                include: {
+                    user: true
+                }
             });
-        }
-        return nestedAnswers;
-    },
-});
+            if (!nestedAnswers) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: `No replies for id '${answerId}'`,
+                });
+            }
+            return nestedAnswers;
+        },
+    });
 
 
 // Endpoints that need to authenticate user
@@ -98,9 +98,9 @@ const authRoutes = createProtectedRouter()
                 },
                 select: defaultAnswerSelect,
             });
-            if (answer != null ) {
-                    return answer;
-                }
+            if (answer != null) {
+                return answer;
+            }
             else {
                 throw new TRPCError({
                     code: 'FORBIDDEN',
@@ -115,21 +115,20 @@ const authRoutes = createProtectedRouter()
             answerStr: z.string(),
         }),
         async resolve({ input, ctx }) {
-                    const answer = await prisma.answer.update({
-                        where: {
-                            answerId: input.answerId
-                        },
-                        data: {
-                            answerStr: input.answerStr,
-                        },
-                        select: defaultAnswerSelect,
-                    });
-                    if(answer)
-                    {
-                        return answer;
-                    }
-                   
-            
+            const answer = await prisma.answer.update({
+                where: {
+                    answerId: input.answerId
+                },
+                data: {
+                    answerStr: input.answerStr,
+                },
+                select: defaultAnswerSelect,
+            });
+            if (answer) {
+                return answer;
+            }
+
+
             else {
                 throw new TRPCError({
                     code: 'FORBIDDEN',

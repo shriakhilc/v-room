@@ -1,7 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { useRouter } from "next/router";
 import Link from "next/link";
-import React from "react";
 import { inferQueryOutput } from "../utils/trpc";
 
 interface ClassroomTableProps {
@@ -9,8 +7,6 @@ interface ClassroomTableProps {
 }
 
 export default function ClassroomTable(props: ClassroomTableProps) {
-    const router = useRouter();
-
     return (
         <div className="flex flex-col">
             <div className="overflow-x-auto">

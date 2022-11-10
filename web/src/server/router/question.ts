@@ -82,8 +82,6 @@ const publicRoutes = createRouter()
             return question;
         },
     })
-    // TODO: ideally use above APIs to split up the calls after UI improvements
-    // maybe not show all unenrolled users in table, and only use them for auto-completion.
     .query('bySearchStr', {
         input: z.object({
             searchStr: z.string(),
@@ -93,15 +91,15 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { searchStr } = input;
-            if(!input.classroomId && !input.userId) {
+            if (!input.classroomId && !input.userId) {
                 const question = await prisma.question.findMany({
                     where: {
-                            questionStr: {
-                                search: searchStr,
-                            },
-                            questionTitle: {
-                                search: searchStr,
-                            }
+                        questionStr: {
+                            search: searchStr,
+                        },
+                        questionTitle: {
+                            search: searchStr,
+                        }
                     },
                     include: {
                         classroom: true,
@@ -115,7 +113,7 @@ const publicRoutes = createRouter()
                 });
                 return question;
             }
-            else if(input.classroomId && !input.userId) {
+            else if (input.classroomId && !input.userId) {
                 const question = await prisma.question.findMany({
                     where: {
                         classroomId: input.classroomId,
@@ -138,7 +136,7 @@ const publicRoutes = createRouter()
                 });
                 return question;
             }
-            else if(input.userId && !input.classroomId) {
+            else if (input.userId && !input.classroomId) {
                 const question = await prisma.question.findMany({
                     where: {
                         userId: input.userId,
@@ -224,7 +222,7 @@ const authRoutes = createProtectedRouter()
                 },
                 select: defaultQuestionSelect,
             });
-            if ((questionMatch != null )) {
+            if ((questionMatch != null)) {
                 const userOnClassroomMatch = await prisma.userOnClassroom.findUnique({
                     where: {
                         userId_classroomId: {
@@ -232,9 +230,9 @@ const authRoutes = createProtectedRouter()
                             classroomId: questionMatch.classroomId,
                         },
                     },
-                    select: { role: true } 
+                    select: { role: true }
                 });
-                if(userOnClassroomMatch != null && (questionMatch.userId == ctx.session.user.id || userOnClassroomMatch.role == UserRole.INSTRUCTOR)) {
+                if (userOnClassroomMatch != null && (questionMatch.userId == ctx.session.user.id || userOnClassroomMatch.role == UserRole.INSTRUCTOR)) {
                     const question = await prisma.question.delete({
                         where: {
                             questionId: input.questionId
@@ -265,7 +263,7 @@ const authRoutes = createProtectedRouter()
                 },
                 select: defaultQuestionSelect,
             });
-            if ((questionMatch != null )) {
+            if ((questionMatch != null)) {
                 const userOnClassroomMatch = await prisma.userOnClassroom.findUnique({
                     where: {
                         userId_classroomId: {
@@ -273,9 +271,9 @@ const authRoutes = createProtectedRouter()
                             classroomId: questionMatch.classroomId,
                         },
                     },
-                    select: { role: true } 
+                    select: { role: true }
                 });
-                if(userOnClassroomMatch != null && questionMatch.userId == ctx.session.user.id) {
+                if (userOnClassroomMatch != null && questionMatch.userId == ctx.session.user.id) {
                     const question = await prisma.question.update({
                         where: {
                             questionId: input.questionId

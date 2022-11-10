@@ -2,7 +2,7 @@ import Peer from 'peerjs';
 import { useState } from 'react';
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import HostStream from '@/src/components/host_stream';
-import { DataEvent, DataPayload } from './MessageDisplay';
+import { DataEvent, DataPayload } from '../utils/meetings';
 const peer = new Peer();
 
 export default function MeetingParticipant(props: { hostid: string | undefined; }) {

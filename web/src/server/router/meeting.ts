@@ -1,8 +1,6 @@
-import { Prisma, UserRole } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
-import { createProtectedRouter, createRouter } from "./context";
+import { createRouter } from "./context";
 
 // Endpoints that do not need to authenticate user
 const publicRoutes = createRouter()

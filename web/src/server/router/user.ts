@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
-import { createRouter, createProtectedRouter } from "./context";
+import { createProtectedRouter, createRouter } from "./context";
 
 const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
     id: true,
