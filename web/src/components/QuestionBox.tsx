@@ -2,6 +2,7 @@ import { Prisma, Question, User, UserRole } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { NextRouter } from "next/router";
 import { useState } from "react";
+import { classroomRouter } from "../server/router/classroom";
 import { trpc } from "../utils/trpc";
 import ReplyBox from "./ReplyBox";
 
@@ -13,6 +14,7 @@ interface QuestionBoxProps {
     user: User,
     router: NextRouter,
     currentUserRole: UserRole,
+    classroomActive: boolean,
 }
 
 export default function QuestionBox(props: QuestionBoxProps) {
@@ -110,7 +112,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                 }
             </div>
             <div className="py-2 text-md text-gray-500">
-                Asked by {props.user.name}
+                Asked by {props.user.name} on {props.question.createdAt.toLocaleDateString('en-US')}
             </div>
 
 
@@ -119,7 +121,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     <ul>
                         {props.answers.map(answer => (
                             <li className="p-1 m-auto" key={answer.answerId}>
-                                <ReplyBox parent={props.question} nestings={0} MAX_NESTINGS={2} answer={answer} user={answer.user} currentUserRole={props.currentUserRole}></ReplyBox>
+                                <ReplyBox parent={props.question} nestings={0} MAX_NESTINGS={2} answer={answer} user={answer.user} currentUserRole={props.currentUserRole} classroomActive={props.classroomActive}></ReplyBox>
                             </li>
                         ))}
                     </ul>
@@ -147,15 +149,17 @@ export default function QuestionBox(props: QuestionBoxProps) {
                 </div>
             }
             <div className="flex">
-                <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Add an Answer</button>
+                {props.classroomActive &&
+                    <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Add an Answer</button>
+                }  
                 <div className="flex flex-1 items-end justify-end">
-                    {(!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                    {(!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)  && props.classroomActive) &&
                         <button onClick={() => setEditing(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Edit</button>
                     }
                     {editing &&
                         <button onClick={() => onUpdateQuestion()} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Confirm</button>
                     }
-                    {(!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                    {(!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)  && props.classroomActive) &&
                         <button onClick={() => setDeleteConfirm(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2">Delete</button>
                     }
                     {deleteConfirm &&

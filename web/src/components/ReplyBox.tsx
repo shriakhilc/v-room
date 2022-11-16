@@ -11,6 +11,7 @@ interface ReplyBoxProps {
     user: User,
     parent: Question | Answer,
     currentUserRole: UserRole,
+    classroomActive: boolean,
 }
 
 export default function ReplyBox(props: ReplyBoxProps) {
@@ -98,18 +99,20 @@ export default function ReplyBox(props: ReplyBoxProps) {
                         <textarea onChange={(e) => setAnswerText(e.currentTarget.value)} value={answerText} className="border rounded-md border-black min-w-full"></textarea>
                     </div>
                 }
-                <p className="py-2 text-grey-200 border-t-2 text-gray-500 border-gray-300"><>Posted by {props.user.name}</></p>
+                <p className="py-2 text-grey-200 border-t-2 text-gray-500 border-gray-300"><>Posted by {props.user.name} on {props.answer.createdAt.toLocaleDateString('en-US')}</></p>
                 {!replying &&
                     <div className="flex">
-                        <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Reply to this Answer</button>
+                        {props.classroomActive &&
+                            <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded" onClick={() => setReplying(true)}>Reply to this Answer</button>
+                        }
                         <div className="flex flex-1 items-end justify-end">
-                            {(!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                            {(!editing && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR) && props.classroomActive) &&
                                 <button onClick={() => setEditing(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Edit</button>
                             }
                             {editing &&
                                 <button onClick={() => onUpdateAnswer()} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded">Confirm</button>
                             }
-                            {(!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR)) &&
+                            {(!deleteConfirm && (data?.user?.name == props.user.name || props.currentUserRole == UserRole.INSTRUCTOR) && props.classroomActive) &&
                                 <button onClick={() => setDeleteConfirm(true)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 my-2 rounded mx-2">Delete</button>
                             }
                             {deleteConfirm &&

@@ -236,7 +236,7 @@ const QuestionListPage: NextPage = () => {
                   <ul>
                     {[...questions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
                       </li>
                     ))}
                   </ul>
@@ -245,7 +245,7 @@ const QuestionListPage: NextPage = () => {
                   <ul>
                     {[...searchQuestions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
                       </li>
                     ))}
                   </ul>
@@ -257,7 +257,9 @@ const QuestionListPage: NextPage = () => {
                 No questions yet!
               </div>
             }
-            <button onClick={showModal} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Ask a Question</button>
+            {classroom.active &&
+              <button onClick={showModal} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">Ask a Question</button>
+            }
             {show &&
               <div
                 className="fixed w-2/4 left-1/4 top-20"
