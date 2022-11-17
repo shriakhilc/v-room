@@ -10,6 +10,7 @@ import { trpc } from '@/src/utils/trpc';
 import Footer from "@/src/components/footer";
 import Header from "@/src/components/header";
 import QuestionBox from "@/src/components/QuestionBox";
+import FilterDropdown from "@/src/components/FilterDropdown";
 
 
 const QuestionListPage: NextPage = () => {
@@ -68,6 +69,11 @@ const QuestionListPage: NextPage = () => {
 
   function formCompleted() {
     return newQuestionBody == "" || newQuestionTitle == "";
+  }
+
+  function onSortQuestions(value: string) {
+    console.log("re-sort");
+    setSortStr(value);
   }
 
   async function onAddQuestion() {
@@ -197,27 +203,30 @@ const QuestionListPage: NextPage = () => {
         <Header session={session} status={sessionStatus}></Header>
 
         <main>
-          <section className="container mx-auto flex flex-col items-left p-4">
+        <section className="container mx-auto flex flex-col items-left p-4">
             {questions &&
               <div className="overflow-auto max-h-[50rem]">
                 <div className="py-2 text-4xl text-red-500 font-bold">
                   Questions for {classroom.name}
                 </div>
-                Filter results: <input value={searchStr} onChange={(e) => setSearchStr(e.currentTarget.value)} type="text" className="text-gray-900 rounded"></input>
+                <div className="flex flex-row items-center justify-between px-2">
+                  <div>Filter results: <input value={searchStr} onChange={(e) => setSearchStr(e.currentTarget.value)} type="text" className="text-gray-900 rounded"></input></div> 
+                  <div><FilterDropdown onSortQuestions={onSortQuestions}></FilterDropdown></div>
+                </div>
                 {searchStr == "" &&
                   <ul>
-                    {questions.map(question => (
+                    {[...questions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
                       </li>
                     ))}
                   </ul>
                 }
                 {(searchStr != "" && searchQuestions) &&
                   <ul>
-                    {searchQuestions.map(question => (
+                    {[...searchQuestions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
                       </li>
                     ))}
                   </ul>

@@ -10,9 +10,8 @@ import { trpc } from '@/src/utils/trpc';
 import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
 import Footer from "@/src/components/footer";
 import Header from "@/src/components/header";
-import QuestionBox from "@/src/components/QuestionBox";
 import UserTable from "@/src/components/userTable";
-import { UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 
 const ClassroomDetail: NextPage = () => {
   const router = useRouter();
@@ -20,11 +19,8 @@ const ClassroomDetail: NextPage = () => {
   const utils = trpc.useContext();
 
   const { data: session, status: sessionStatus } = useSession();
-  const [show, setShow] = React.useState(false);
-  const [newQuestionTitle, setNewQuestionTitle] = React.useState("");
-  const [newQuestionBody, setNewQuestionBody] = React.useState("");
-  const [error, setError] = React.useState(false);
   const [searchStr, setSearchStr] = React.useState("");
+  const [sortStr, setSortStr] = React.useState("");
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -112,14 +108,6 @@ const ClassroomDetail: NextPage = () => {
     });
   }
 
-  function showModal() {
-    setShow(true);
-  }
-
-  function formCompleted() {
-    return newQuestionBody == "" || newQuestionTitle == "";
-  }
-
   async function onArchiveClassroom() {
     await archiveClassroom.mutateAsync({ id: classroomId }, {
       onSuccess: () => utils.invalidateQueries(['classroom.byId']),
@@ -130,25 +118,23 @@ const ClassroomDetail: NextPage = () => {
     });
   }
 
-  async function onAddQuestion() {
-    await addQuestion.mutateAsync({
-      classroomId: classroomId,
-      userId: session?.user?.id as string,
-      questionTitle: newQuestionTitle,
-      questionStr: newQuestionBody
-    },
-      {
-        onSuccess: () => {
-          utils.invalidateQueries(["question.byClassroom"]);
-          utils.invalidateQueries(["question.bySearchStr"]);
-        },
-        onError(error) {
-          console.log(`ERROR ${error}`);
-        },
-      });
-    setNewQuestionBody("");
-    setNewQuestionTitle("");
-    setShow(false);
+  function compareFn(
+    a: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>, 
+    b: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>) {
+   
+      console.log("compare");
+      if(sortStr == "name") {
+      return a.questionTitle.localeCompare(b.questionTitle);
+    }
+    else if(sortStr == "date") {
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    }
+    else if(sortStr == "user") {
+      return a.user.name?.localeCompare(b.user.name as string) as number;
+    }
+    else {
+      return 0;
+    }
   }
 
   const { data: meetings, status: meetingsStatus } = trpc.useQuery(
