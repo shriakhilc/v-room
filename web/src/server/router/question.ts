@@ -1,4 +1,4 @@
-import { Prisma, UserRole } from '@prisma/client';
+import { LikeType, Prisma, UserRole } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
@@ -20,7 +20,9 @@ const defaultQuestionSelect = Prisma.validator<Prisma.QuestionSelect>()({
     createdAt: true,
     updatedAt: true,
     answer: true,
+    likes: true
 });
+
 
 // Endpoints that do not need to authenticate user
 const publicRoutes = createRouter()
@@ -42,25 +44,29 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { questionId } = input;
-            const question = await prisma.question.findUnique({
+            const result = await prisma.question.findUnique({
                 where: { questionId },
                 include: {
                     classroom: true,
                     user: true,
                     answer: {
                         include: {
-                            user: true
+                            user: true,
+                            likes: true
                         }
                     },
+                    likes:true
                 },
             });
-            if (!question) {
+           
+            if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
                     message: `No question with id '${questionId}'`,
                 });
             }
-            return question;
+            
+            return result;
         },
     })
     .query('byClassroom', {
@@ -69,25 +75,56 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { classroomId } = input;
-            const question = await prisma.question.findMany({
-                where: { classroomId },
-                include: {
-                    classroom: true,
-                    user: true,
-                    answer: {
-                        include: {
-                            user: true
-                        }
+           const result =await prisma.question.findMany(
+                {
+                    orderBy: {
+                        updatedAt: 'desc'
                     },
-                },
-            });
-            if (!question) {
+                    include:{
+                        answer:
+                        {
+                            include:{
+                                likes:true
+                             },
+                        },
+                        likes:true,
+                        classroom:true
+                    },
+                    where: {
+                        classroomId: classroomId
+                      }
+                }
+            );
+            if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
                     message: `No question with id '${classroomId}'`,
                 });
             }
-            return question;
+            result.forEach((element: { [x: string]: any; likes: any[]; }) => {
+                let dislikes =  element?.likes.filter(function (e:any) {
+                    return e.likeType === 'dislike';
+                });
+                let likes =  element?.likes.filter(function (e:any) {
+                    return e.likeType === 'like';
+                });
+             
+                element.likes=likes;
+                element['dislikes']=dislikes;
+                for(let i=0;i<element.answer.length;i++)
+                {
+                    let dislikes =  element?.answer[i].likes.filter(function (e:any) {
+                        return e.likeType === 'dislike';
+                    });
+                    let likes =  element?.answer[i].likes.filter(function (e:any) {
+                        return e.likeType === 'like';
+                    });
+                 
+                    element.answer[i].likes=likes;
+                    element.answer[i]['dislikes']=dislikes;
+                }
+               });
+            return result;
         },
     })
     .query('bySearchStr', {
@@ -303,6 +340,6 @@ const authRoutes = createProtectedRouter()
             }
         },
     });
-
+  
 // Combine all routes for this model
 export const questionRouter = publicRoutes.merge(authRoutes);

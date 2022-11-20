@@ -47,6 +47,8 @@ model User {
   classrooms    UserOnClassroom[]
   Question      Question[]
   Answer        Answer[]
+  LikeQuestion  LikeQuestion[]
+  LikeAnswer    LikeAnswer[]
 }
 
 model VerificationToken {
@@ -81,35 +83,63 @@ model UserOnClassroom {
 }
 
 model Question {
-  questionId    String    @id @default(cuid())
-  questionTitle String    @db.Text
-  questionStr   String    @db.Text
-  classroom     Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  questionId    String         @id @default(cuid())
+  questionTitle String         @db.Text
+  questionStr   String         @db.Text
+  classroom     Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   classroomId   String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   answer        Answer[]
+  likes         LikeQuestion[]
 
   @@fulltext([questionTitle, questionStr])
 }
 
-model Answer {
-  answerId   String   @id @default(cuid())
-  answerStr  String   @db.Text
-  question   Question @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
-  questionId String
+model LikeQuestion {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  questionId String
+  question   Question @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
+  likeType   LikeType
+
+
+  @@id([userId, questionId])
+}
+
+model Answer {
+  answerId   String       @id @default(cuid())
+  answerStr  String       @db.Text
+  question   Question     @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
+  questionId String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  likes      LikeAnswer[]
 
   @@fulltext([answerStr])
+}
+
+model LikeAnswer {
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  answerId String
+  answer   Answer   @relation(fields: [answerId], references: [answerId], onDelete: Cascade)
+  likeType LikeType
+
+   @@id([userId, answerId])
 }
 
 enum UserRole {
   STUDENT
   ASSISTANT
   INSTRUCTOR
+}
+
+enum LikeType {
+  like
+  dislike
 }
