@@ -19,6 +19,7 @@ const defaultAnswerSelect = Prisma.validator<Prisma.AnswerSelect>()({
     userId: true,
     createdAt: true,
     updatedAt: true,
+    likes:true
 });
 
 // Endpoints that do not need to authenticate user
@@ -29,17 +30,43 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { answerId } = input;
-            const answer = await prisma.answer.findUnique({
-                where: { answerId },
-                select: defaultAnswerSelect,
+            // const answer = await prisma.answer.findUnique({
+            //     where: { answerId },
+            //     select: defaultAnswerSelect,
+            // });
+            const result: any = await prisma.answer.findUnique({
+                where: {
+                    answerId: answerId
+                },
+                include: {
+                    likes: true,
+                    user: true,
+                    question:
+                    {
+                        include:
+                        {
+                            classroom: true,
+                        }
+                    }
+                }
             });
-            if (!answer) {
+
+            if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
                     message: `No answer with id '${answerId}'`,
                 });
             }
-            return answer;
+            let dislikes = result?.likes.filter(function (e: any) {
+                return e.likeType === 'dislike';
+            });
+            let likes = result?.likes.filter(function (e: any) {
+                return e.likeType === 'like';
+            });
+
+            result.likes = likes;
+            result['dislikes'] = dislikes;
+            return result;
         },
     })
     .query('nestedAnswers', {

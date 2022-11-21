@@ -84,11 +84,13 @@ const publicRoutes = createRouter()
                         answer:
                         {
                             include:{
-                                likes:true
+                                likes:true,
+                                user:true
                              },
                         },
                         likes:true,
-                        classroom:true
+                        classroom:true,
+                        user:true
                     },
                     where: {
                         classroomId: classroomId
@@ -137,96 +139,339 @@ const publicRoutes = createRouter()
         async resolve({ input }) {
             const { searchStr } = input;
             if (!input.classroomId && !input.userId) {
-                const question = await prisma.question.findMany({
+                const questionResult = await prisma.question.findMany({
                     where: {
-                        questionStr: {
-                            search: searchStr,
-                        },
-                        questionTitle: {
-                            search: searchStr,
-                        }
+                      questionStr: {
+                        search: searchStr,
+                      },
+                      questionTitle:{
+                        search:searchStr,
+                      }
                     },
-                    include: {
-                        classroom: true,
-                        user: true,
-                        answer: {
-                            include: {
-                                user: true
-                            }
-                        },
-                    },
+                    orderBy: {
+                      updatedAt: 'desc'
+                  },
+                  include:{
+                    likes:true,
+                    user:true,
+                    classroom:true,
+                      answer:
+                      {
+                          include:{
+                              likes:true,
+                              user:true
+                           },
+                      },
+                     
+                  },
                 });
-                return question;
+                questionResult.forEach((element: { [x: string]: any; likes: any[]; }) => {
+                  let dislikes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'dislike';
+                  });
+                  let likes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'like';
+                  });
+               
+                  element.likes=likes;
+                  element['dislikes']=dislikes;
+                  for(let i=0;i<element.answer.length;i++)
+                  {
+                      let dislikes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'dislike';
+                      });
+                      let likes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'like';
+                      });
+                   
+                      element.answer[i].likes=likes;
+                      element.answer[i]['dislikes']=dislikes;
+                  }
+                 });
+                const answerResult:any = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                          search: searchStr,
+                        },
+                      },
+                      include:{
+                        likes:true,
+                        user:true,
+                        question:
+                        {
+                            include:
+                            {
+                                classroom:true,
+                            }
+                        }
+                     }
+                });
+                console.log(answerResult);
+                for(let i=0;i<answerResult.length;i++)
+                {
+                  let dislikes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'dislike';
+                  });
+                let likes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'like';
+                  });
+                  answerResult[i].likes=likes;
+                  answerResult[i].dislikes=dislikes;
+                }
+            
+                return {questions:questionResult,answers:answerResult};
             }
             else if (input.classroomId && !input.userId) {
-                const question = await prisma.question.findMany({
+                const questionResult = await prisma.question.findMany({
                     where: {
-                        classroomId: input.classroomId,
-                        questionStr: {
-                            search: searchStr,
-                        },
-                        questionTitle: {
-                            search: searchStr,
-                        },
+                    classroomId: input.classroomId,
+                      questionStr: {
+                        search: searchStr,
+                      },
+                      questionTitle:{
+                        search:searchStr,
+                      }
                     },
-                    include: {
-                        classroom: true,
-                        user: true,
-                        answer: {
-                            include: {
-                                user: true
-                            }
-                        },
-                    },
+                    orderBy: {
+                      updatedAt: 'desc'
+                  },
+                  include:{
+                    likes:true,
+                    user:true,
+                    classroom:true,
+                      answer:
+                      {
+                          include:{
+                              likes:true,
+                              user:true
+                           },
+                      },
+                     
+                  },
                 });
-                return question;
+                questionResult.forEach((element: { [x: string]: any; likes: any[]; }) => {
+                  let dislikes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'dislike';
+                  });
+                  let likes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'like';
+                  });
+               
+                  element.likes=likes;
+                  element['dislikes']=dislikes;
+                  for(let i=0;i<element.answer.length;i++)
+                  {
+                      let dislikes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'dislike';
+                      });
+                      let likes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'like';
+                      });
+                   
+                      element.answer[i].likes=likes;
+                      element.answer[i]['dislikes']=dislikes;
+                  }
+                 });
+                const answerResult:any = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                          search: searchStr,
+                        },
+                      },
+                      include:{
+                        likes:true,
+                        user:true,
+                        question:
+                        {
+                            include:
+                            {
+                                classroom:true,
+                            }
+                        }
+                     }
+                });
+                console.log(answerResult);
+                for(let i=0;i<answerResult.length;i++)
+                {
+                  let dislikes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'dislike';
+                  });
+                let likes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'like';
+                  });
+                  answerResult[i].likes=likes;
+                  answerResult[i].dislikes=dislikes;
+                }
+                return {questions:questionResult,answers:answerResult};
             }
+
             else if (input.userId && !input.classroomId) {
-                const question = await prisma.question.findMany({
+                const questionResult = await prisma.question.findMany({
                     where: {
-                        userId: input.userId,
-                        questionStr: {
-                            search: searchStr,
-                        },
-                        questionTitle: {
-                            search: searchStr,
-                        },
+                    userId: input.userId,
+                      questionStr: {
+                        search: searchStr,
+                      },
+                      questionTitle:{
+                        search:searchStr,
+                      }
                     },
-                    include: {
-                        classroom: true,
-                        user: true,
-                        answer: {
-                            include: {
-                                user: true
-                            }
-                        },
-                    },
+                    orderBy: {
+                      updatedAt: 'desc'
+                  },
+                  include:{
+                    likes:true,
+                    user:true,
+                    classroom:true,
+                      answer:
+                      {
+                          include:{
+                              likes:true,
+                              user:true
+                           },
+                      },
+                     
+                  },
                 });
-                return question;
+                questionResult.forEach((element: { [x: string]: any; likes: any[]; }) => {
+                  let dislikes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'dislike';
+                  });
+                  let likes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'like';
+                  });
+               
+                  element.likes=likes;
+                  element['dislikes']=dislikes;
+                  for(let i=0;i<element.answer.length;i++)
+                  {
+                      let dislikes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'dislike';
+                      });
+                      let likes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'like';
+                      });
+                   
+                      element.answer[i].likes=likes;
+                      element.answer[i]['dislikes']=dislikes;
+                  }
+                 });
+                const answerResult:any = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                          search: searchStr,
+                        },
+                      },
+                      include:{
+                        likes:true,
+                        user:true,
+                        question:
+                        {
+                            include:
+                            {
+                                classroom:true,
+                            }
+                        }
+                     }
+                });
+                console.log(answerResult);
+                for(let i=0;i<answerResult.length;i++)
+                {
+                  let dislikes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'dislike';
+                  });
+                let likes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'like';
+                  });
+                  answerResult[i].likes=likes;
+                  answerResult[i].dislikes=dislikes;
+                }
+                return {questions:questionResult,answers:answerResult};
             }
+
             else {
-                const question = await prisma.question.findMany({
+                const questionResult = await prisma.question.findMany({
                     where: {
                         userId: input.userId as string,
                         classroomId: input.classroomId as string,
-                        questionStr: {
-                            search: searchStr,
-                        },
-                        questionTitle: {
-                            search: searchStr,
-                        },
+                      questionStr: {
+                        search: searchStr,
+                      },
+                      questionTitle:{
+                        search:searchStr,
+                      }
                     },
-                    include: {
-                        classroom: true,
-                        user: true,
-                        answer: {
-                            include: {
-                                user: true
-                            }
-                        },
-                    },
+                    orderBy: {
+                      updatedAt: 'desc'
+                  },
+                  include:{
+                    likes:true,
+                    user:true,
+                    classroom:true,
+                      answer:
+                      {
+                          include:{
+                              likes:true,
+                              user:true
+                           },
+                      },
+                     
+                  },
                 });
-                return question;
+                questionResult.forEach((element: { [x: string]: any; likes: any[]; }) => {
+                  let dislikes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'dislike';
+                  });
+                  let likes =  element?.likes.filter(function (e:any) {
+                      return e.likeType === 'like';
+                  });
+               
+                  element.likes=likes;
+                  element['dislikes']=dislikes;
+                  for(let i=0;i<element.answer.length;i++)
+                  {
+                      let dislikes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'dislike';
+                      });
+                      let likes =  element?.answer[i].likes.filter(function (e:any) {
+                          return e.likeType === 'like';
+                      });
+                   
+                      element.answer[i].likes=likes;
+                      element.answer[i]['dislikes']=dislikes;
+                  }
+                 });
+                const answerResult:any = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                          search: searchStr,
+                        },
+                      },
+                      include:{
+                        likes:true,
+                        user:true,
+                        question:
+                        {
+                            include:
+                            {
+                                classroom:true,
+                            }
+                        }
+                     }
+                });
+                console.log(answerResult);
+                for(let i=0;i<answerResult.length;i++)
+                {
+                  let dislikes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'dislike';
+                  });
+                let likes =  answerResult[i]?.likes.filter(function (e:any) {
+                    return e.likeType === 'like';
+                  });
+                  answerResult[i].likes=likes;
+                  answerResult[i].dislikes=dislikes;
+                }
+                return {questions:questionResult,answers:answerResult};
             }
             return [];
         },
