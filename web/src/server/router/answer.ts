@@ -48,7 +48,8 @@ const publicRoutes = createRouter()
                             classroom: true,
                         }
                     }
-                }
+                },
+                
             });
 
             if (!result) {
