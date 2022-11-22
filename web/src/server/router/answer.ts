@@ -19,7 +19,8 @@ const defaultAnswerSelect = Prisma.validator<Prisma.AnswerSelect>()({
     userId: true,
     createdAt: true,
     updatedAt: true,
-    likes:true
+    likes: true,
+    parent_id: true
 });
 
 // Endpoints that do not need to authenticate user
@@ -47,9 +48,14 @@ const publicRoutes = createRouter()
                         {
                             classroom: true,
                         }
+                    },
+                    Children: {
+                        include: {
+                            likes: true
+                        }
                     }
                 },
-                
+
             });
 
             if (!result) {
@@ -57,6 +63,21 @@ const publicRoutes = createRouter()
                     code: 'NOT_FOUND',
                     message: `No answer with id '${answerId}'`,
                 });
+            }
+
+            //This loop is for getting likes and dislikes for the children of particular answerId
+            for (let index = 0; index < result.Children.length; index++) {
+
+                let childrenDislikes = result?.Children[index].likes.filter(function (e: any) {
+                    return e.likeType === 'dislike';
+                });
+                let childrenLikes = result?.Children[index].likes.filter(function (e: any) {
+                    return e.likeType === 'like';
+                });
+
+                result.Children[index].likes = childrenLikes;
+                result.Children[index]['dislikes'] = childrenDislikes;
+
             }
             let dislikes = result?.likes.filter(function (e: any) {
                 return e.likeType === 'dislike';
@@ -101,6 +122,7 @@ const authRoutes = createProtectedRouter()
             answerStr: z.string(),
             questionId: z.string().cuid(),
             userId: z.string().cuid(),
+            parent_id:z.string().cuid()
         }),
         async resolve({ input }) {
             const answer = await prisma.answer.create({
@@ -108,6 +130,9 @@ const authRoutes = createProtectedRouter()
                     answerStr: input.answerStr,
                     questionId: input.questionId,
                     userId: input.userId,
+                    parent_id:input.parent_id,
+                    createdAt:new Date(),
+                    updatedAt:new Date()
                 },
                 select: defaultAnswerSelect,
             });

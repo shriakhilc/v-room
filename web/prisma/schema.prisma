@@ -112,10 +112,13 @@ model LikeQuestion {
 model Answer {
   answerId   String       @id @default(cuid())
   answerStr  String       @db.Text
-  question   Question     @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
-  questionId String
+  question   Question?     @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
+  questionId String?
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
+  Children  Answer[] @relation("Answer_Children")
+  parent    Answer?  @relation("Answer_Children", fields: [parent_id], references: [answerId], onDelete: NoAction, onUpdate: NoAction)
+  parent_id String?   @db.Text
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   likes      LikeAnswer[]
