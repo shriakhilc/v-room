@@ -44,7 +44,15 @@ const publicRoutes = createRouter()
             const { questionId } = input;
             const question = await prisma.question.findUnique({
                 where: { questionId },
-                select: defaultQuestionSelect,
+                include: {
+                    classroom: true,
+                    user: true,
+                    answer: {
+                        include: {
+                            user: true
+                        }
+                    },
+                },
             });
             if (!question) {
                 throw new TRPCError({
