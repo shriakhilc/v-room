@@ -24,7 +24,7 @@ const SingleQuestionPage: NextPage = () => {
     }
   );
 
-  const { data: question, status: questionStatus } = trpc.useQuery(
+  const { data: thisQuestion, status: questionStatus } = trpc.useQuery(
     ['question.byId', { questionId: questionId }],
     {
       enabled: questionId != undefined,
@@ -171,7 +171,7 @@ const SingleQuestionPage: NextPage = () => {
   }
 
   
-  if(!allQuestions.includes(question)) {
+  if(!allQuestions.includes(thisQuestion)) {
     return (
         <>
           <div className="container mx-auto">
@@ -203,12 +203,12 @@ const SingleQuestionPage: NextPage = () => {
 
         <main>
           <section className="container mx-auto flex flex-col items-left p-4">
-            {question &&
+            {thisQuestion &&
               <div className="overflow-auto max-h-[50rem]">
                 <div className="py-2 text-4xl text-red-500 font-bold">
                   Question View
                 </div>
-                <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
+                <QuestionBox question={thisQuestion} answers={thisQuestion.answer} user={thisQuestion.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
               </div>
             }
           </section>
