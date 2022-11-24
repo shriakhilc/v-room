@@ -8,6 +8,7 @@ interface UserTableProps {
     currentUserRole: UserRole,
     onAddUser: (userId: string, role: UserRole) => Promise<void>,
     onRemoveUser: (userId: string) => Promise<void>,
+    classroomActive: boolean,
 }
 
 class UserTable extends React.Component<UserTableProps, { selectedRole: UserRole }> {
@@ -69,7 +70,7 @@ class UserTable extends React.Component<UserTableProps, { selectedRole: UserRole
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 {/* TODO: Use a Button, button styling for <a>, or use Link; whatever best practice might be */}
-                                                {this.props.currentUserRole == UserRole.INSTRUCTOR &&
+                                                {(this.props.currentUserRole == UserRole.INSTRUCTOR && this.props.classroomActive) &&
                                                     <a onClick={async () => await this.props.onRemoveUser(user.id)} href="#" className="text-red-600 hover:text-red-900">
                                                         Remove
                                                     </a>
@@ -96,7 +97,7 @@ class UserTable extends React.Component<UserTableProps, { selectedRole: UserRole
                                                 {/* Empty cell since no Remove action on these users */}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {this.props.currentUserRole == UserRole.INSTRUCTOR &&
+                                                {(this.props.currentUserRole == UserRole.INSTRUCTOR && this.props.classroomActive) &&
                                                     <div className="text-gray-900">
                                                         {/* TODO: Use a Button, button styling for <a>, or use Link; whatever best practice might be */}
                                                         <a onClick={async () => await this.props.onAddUser(user.id, this.state.selectedRole)} href="#" className="text-green-600 hover:text-green-900">

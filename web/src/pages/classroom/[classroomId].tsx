@@ -230,6 +230,7 @@ const ClassroomDetail: NextPage = () => {
               currentUserRole={currentUserRole}
               onAddUser={addUserToClassroom}
               onRemoveUser={removeUserFromClassroom}
+              classroomActive={classroom.active}
             ></UserTable>
 
             {/* TODO: better way to join and host meetings */}
