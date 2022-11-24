@@ -10,21 +10,14 @@ import { trpc } from '@/src/utils/trpc';
 import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdown";
 import Footer from "@/src/components/footer";
 import Header from "@/src/components/header";
-import QuestionBox from "@/src/components/QuestionBox";
 import UserTable from "@/src/components/userTable";
-import { UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 
 const ClassroomDetail: NextPage = () => {
   const router = useRouter();
   const classroomId = router.query.classroomId as string;
   const utils = trpc.useContext();
-
   const { data: session, status: sessionStatus } = useSession();
-  const [show, setShow] = React.useState(false);
-  const [newQuestionTitle, setNewQuestionTitle] = React.useState("");
-  const [newQuestionBody, setNewQuestionBody] = React.useState("");
-  const [error, setError] = React.useState(false);
-  const [searchStr, setSearchStr] = React.useState("");
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -44,25 +37,10 @@ const ClassroomDetail: NextPage = () => {
     [allUsersSectioned, session]
   );
 
-  const { data: questions, status: questionStatus } = trpc.useQuery(
-    ['question.byClassroom', { classroomId: classroomId }],
-    {
-      enabled: classroomStatus == "success" && classroom != undefined,
-    }
-  );
-
-  const { data: searchQuestions, status: searchQuestionStatus } = trpc.useQuery(
-    ['question.bySearchStr', { searchStr: searchStr, userId: null, classroomId: classroomId }],
-    {
-      enabled: classroomStatus == "success" && classroom != undefined,
-    }
-  );
-
   const deleteClassroom = trpc.useMutation('classroom.delete');
   const archiveClassroom = trpc.useMutation('classroom.archive');
   const addUser = trpc.useMutation('classroom.addUser');
   const removeUser = trpc.useMutation('classroom.removeUser');
-  const addQuestion = trpc.useMutation('question.add');
 
   async function addUserToClassroom(userId: string, role: UserRole) {
     await addUser.mutateAsync(
@@ -112,14 +90,6 @@ const ClassroomDetail: NextPage = () => {
     });
   }
 
-  function showModal() {
-    setShow(true);
-  }
-
-  function formCompleted() {
-    return newQuestionBody == "" || newQuestionTitle == "";
-  }
-
   async function onArchiveClassroom() {
     await archiveClassroom.mutateAsync({ id: classroomId }, {
       onSuccess: () => utils.invalidateQueries(['classroom.byId']),
@@ -128,27 +98,6 @@ const ClassroomDetail: NextPage = () => {
         console.log(`pages/classroom/${classroomId}: ERROR: ${error}`);
       },
     });
-  }
-
-  async function onAddQuestion() {
-    await addQuestion.mutateAsync({
-      classroomId: classroomId,
-      userId: session?.user?.id as string,
-      questionTitle: newQuestionTitle,
-      questionStr: newQuestionBody
-    },
-      {
-        onSuccess: () => {
-          utils.invalidateQueries(["question.byClassroom"]);
-          utils.invalidateQueries(["question.bySearchStr"]);
-        },
-        onError(error) {
-          console.log(`ERROR ${error}`);
-        },
-      });
-    setNewQuestionBody("");
-    setNewQuestionTitle("");
-    setShow(false);
   }
 
   const { data: meetings, status: meetingsStatus } = trpc.useQuery(
