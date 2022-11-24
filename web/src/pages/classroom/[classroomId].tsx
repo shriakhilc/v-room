@@ -17,10 +17,7 @@ const ClassroomDetail: NextPage = () => {
   const router = useRouter();
   const classroomId = router.query.classroomId as string;
   const utils = trpc.useContext();
-
   const { data: session, status: sessionStatus } = useSession();
-  const [searchStr, setSearchStr] = React.useState("");
-  const [sortStr, setSortStr] = React.useState("");
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
@@ -40,25 +37,10 @@ const ClassroomDetail: NextPage = () => {
     [allUsersSectioned, session]
   );
 
-  const { data: questions, status: questionStatus } = trpc.useQuery(
-    ['question.byClassroom', { classroomId: classroomId }],
-    {
-      enabled: classroomStatus == "success" && classroom != undefined,
-    }
-  );
-
-  const { data: searchQuestions, status: searchQuestionStatus } = trpc.useQuery(
-    ['question.bySearchStr', { searchStr: searchStr, userId: null, classroomId: classroomId }],
-    {
-      enabled: classroomStatus == "success" && classroom != undefined,
-    }
-  );
-
   const deleteClassroom = trpc.useMutation('classroom.delete');
   const archiveClassroom = trpc.useMutation('classroom.archive');
   const addUser = trpc.useMutation('classroom.addUser');
   const removeUser = trpc.useMutation('classroom.removeUser');
-  const addQuestion = trpc.useMutation('question.add');
 
   async function addUserToClassroom(userId: string, role: UserRole) {
     await addUser.mutateAsync(
@@ -116,25 +98,6 @@ const ClassroomDetail: NextPage = () => {
         console.log(`pages/classroom/${classroomId}: ERROR: ${error}`);
       },
     });
-  }
-
-  function compareFn(
-    a: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>, 
-    b: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>) {
-   
-      console.log("compare");
-      if(sortStr == "name") {
-      return a.questionTitle.localeCompare(b.questionTitle);
-    }
-    else if(sortStr == "date") {
-      return a.createdAt.getTime() - b.createdAt.getTime();
-    }
-    else if(sortStr == "user") {
-      return a.user.name?.localeCompare(b.user.name as string) as number;
-    }
-    else {
-      return 0;
-    }
   }
 
   const { data: meetings, status: meetingsStatus } = trpc.useQuery(

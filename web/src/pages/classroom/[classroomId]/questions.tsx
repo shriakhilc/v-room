@@ -11,6 +11,7 @@ import Footer from "@/src/components/footer";
 import Header from "@/src/components/header";
 import QuestionBox from "@/src/components/QuestionBox";
 import FilterDropdown from "@/src/components/FilterDropdown";
+import { Prisma } from "@prisma/client";
 
 
 const QuestionListPage: NextPage = () => {
@@ -24,14 +25,13 @@ const QuestionListPage: NextPage = () => {
   const [newQuestionBody, setNewQuestionBody] = React.useState("");
   const [error, setError] = React.useState(false);
   const [searchStr, setSearchStr] = React.useState("");
+  const [sortStr, setSortStr] = React.useState("");
 
   const { data: classroom, status: classroomStatus } = trpc.useQuery(['classroom.byId', { id: classroomId }],
     {
       enabled: session?.user?.id != undefined,
     }
   );
-
-  
 
   const { data: questions, status: questionStatus } = trpc.useQuery(
     ['question.byClassroom', { classroomId: classroomId }],
@@ -52,7 +52,7 @@ const QuestionListPage: NextPage = () => {
     {
         enabled: session?.user?.id != undefined,
     }
-  )
+  );
 
   const { data: userOnClassroom, status: userOnClassroomStatus } = trpc.useQuery(
     ['userOnClassroom.byClassroomAndUserId', {userId: currentUser?.id as string, classroomId: classroomId }],
@@ -74,6 +74,25 @@ const QuestionListPage: NextPage = () => {
   function onSortQuestions(value: string) {
     console.log("re-sort");
     setSortStr(value);
+  }
+
+  function compareFn(
+    a: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>, 
+    b: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>) {
+   
+      console.log("compare");
+      if(sortStr == "name") {
+      return a.questionTitle.localeCompare(b.questionTitle);
+    }
+    else if(sortStr == "date") {
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    }
+    else if(sortStr == "user") {
+      return a.user.name?.localeCompare(b.user.name as string) as number;
+    }
+    else {
+      return 0;
+    }
   }
 
   async function onAddQuestion() {
@@ -217,7 +236,7 @@ const QuestionListPage: NextPage = () => {
                   <ul>
                     {[...questions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
                       </li>
                     ))}
                   </ul>
@@ -226,7 +245,7 @@ const QuestionListPage: NextPage = () => {
                   <ul>
                     {[...searchQuestions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={currentUserRole}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role}></QuestionBox>
                       </li>
                     ))}
                   </ul>
