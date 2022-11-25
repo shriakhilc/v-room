@@ -20,7 +20,7 @@ const defaultQuestionSelect = Prisma.validator<Prisma.QuestionSelect>()({
     createdAt: true,
     updatedAt: true,
     answer: true,
-    likes: true
+    likes: true,
 });
 
 
@@ -58,7 +58,6 @@ const publicRoutes = createRouter()
                     likes:true
                 },
             });
-           
             if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
@@ -66,7 +65,27 @@ const publicRoutes = createRouter()
                 });
             }
 
-            return result;
+            const filteredResult = JSON.parse(JSON.stringify(result));
+            let dislikes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
+                return e.likeType === 'dislike';
+            });
+            let likes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
+                return e.likeType === 'like';
+            });
+            filteredResult.likes = likes;
+            filteredResult['dislikes'] = dislikes;
+            for (let i = 0; i < filteredResult.answer.length; i++) {
+                let dislikes = filteredResult?.answer[i]?.likes.filter(function (e: { likeType: string; }) {
+                    return e.likeType === 'dislike';
+                });
+                let likes = filteredResult?.answer[i]?.likes.filter(function (e: { likeType: string; }) {
+                    return e.likeType === 'like';
+                });
+
+                filteredResult.answer[i].likes = likes;
+                filteredResult.answer[i]['dislikes'] = dislikes;
+            }
+            return filteredResult
         },
     })
     .query('byClassroom', {
@@ -104,20 +123,20 @@ const publicRoutes = createRouter()
                 });
             }
             result.forEach((element: { [x: string]: any; likes: any[]; }) => {
-                let dislikes = element?.likes.filter(function (e: any) {
+                let dislikes = element?.likes.filter(function (e) {
                     return e.likeType === 'dislike';
                 });
-                let likes = element?.likes.filter(function (e: any) {
+                let likes = element?.likes.filter(function (e) {
                     return e.likeType === 'like';
                 });
 
                 element.likes = likes;
                 element['dislikes'] = dislikes;
                 for (let i = 0; i < element.answer.length; i++) {
-                    let dislikes = element?.answer[i].likes.filter(function (e: any) {
+                    let dislikes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
                         return e.likeType === 'dislike';
                     });
-                    let likes = element?.answer[i].likes.filter(function (e: any) {
+                    let likes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
                         return e.likeType === 'like';
                     });
 
@@ -137,7 +156,7 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { searchStr } = input;
-            let questionResult:any, answerResult:any;
+            let questionResult, answerResult;
             if (!input.classroomId && !input.userId) {
                 questionResult = await prisma.question.findMany({
                     where: {
@@ -186,7 +205,7 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-                console.log(answerResult);
+
                 answerResult = getAnswerLikes(answerResult);
                 return { questions: questionResult, answers: answerResult };
             }
@@ -238,7 +257,7 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-                answerResult = getAnswerLikes(answerResult,input.classroomId);
+                answerResult = getAnswerLikes(answerResult, input.classroomId);
                 return { questions: questionResult, answers: answerResult };
             }
 
@@ -271,7 +290,7 @@ const publicRoutes = createRouter()
                     },
                 });
                 questionResult = getQuestionLikes(questionResult);
-                answerResult= await prisma.answer.findMany({
+                answerResult = await prisma.answer.findMany({
                     where: {
                         answerStr: {
                             search: searchStr,
@@ -341,7 +360,12 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-                answerResult = getAnswerLikes(answerResult,input.classroomId);
+                
+                if(input.classroomId)
+                {
+                    answerResult = getAnswerLikes(answerResult, input.classroomId);
+                }
+               
                 return { questions: questionResult, answers: answerResult };
             }
         },
@@ -456,22 +480,22 @@ const authRoutes = createProtectedRouter()
         },
     });
 
-const getQuestionLikes = (questionResult: any) => {
+const getQuestionLikes = (questionResult: { [x: string]: any; likes: any[]; }[]) => {
     questionResult.forEach((element: { [x: string]: any; likes: any[]; }) => {
-        let dislikes = element?.likes.filter(function (e: any) {
+        let dislikes = element?.likes.filter(function (e) {
             return e.likeType === 'dislike';
         });
-        let likes = element?.likes.filter(function (e: any) {
+        let likes = element?.likes.filter(function (e) {
             return e.likeType === 'like';
         });
 
         element.likes = likes;
         element['dislikes'] = dislikes;
         for (let i = 0; i < element.answer.length; i++) {
-            let dislikes = element?.answer[i].likes.filter(function (e: any) {
+            let dislikes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
                 return e.likeType === 'dislike';
             });
-            let likes = element?.answer[i].likes.filter(function (e: any) {
+            let likes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
                 return e.likeType === 'like';
             });
 
@@ -482,28 +506,27 @@ const getQuestionLikes = (questionResult: any) => {
     return questionResult;
 }
 
-const getAnswerLikes = (answerResult: any, classroomId?:any) => {
-    let filteredAnswers:any;
-    if(classroomId)
-    {
-        filteredAnswers=answerResult.filter(function (e: any) {
-            return e.question.classroomId=classroomId;
+const getAnswerLikes = (answerResult: any[], classroomId?: string) => {
+    let filteredAnswers;
+    if (classroomId) {
+        filteredAnswers = answerResult.filter(function (e: { question: { classroomId: string; }; }) {
+            return e.question.classroomId = classroomId;
         });
     }
-    else{
-        filteredAnswers=answerResult;
+    else {
+        filteredAnswers = answerResult;
     }
-    for (let i = 0; i < answerResult.length; i++) {
-        let dislikes = answerResult[i]?.likes.filter(function (e: any) {
+    for (let i = 0; i < filteredAnswers.length; i++) {
+        let dislikes = filteredAnswers[i]?.likes.filter(function (e: { likeType: string; }) {
             return e.likeType === 'dislike';
         });
-        let likes = answerResult[i]?.likes.filter(function (e: any) {
+        let likes = filteredAnswers[i]?.likes.filter(function (e: { likeType: string; }) {
             return e.likeType === 'like';
         });
-        answerResult[i].likes = likes;
-        answerResult[i].dislikes = dislikes;
+        filteredAnswers[i].likes = likes;
+        filteredAnswers[i].dislikes = dislikes;
     }
-    return answerResult;
+    return filteredAnswers;
 }
 
 // Combine all routes for this model

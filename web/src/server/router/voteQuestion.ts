@@ -29,7 +29,7 @@ const authRoutes = createProtectedRouter()
     }),
     async resolve({ input, ctx }) {
 
-        const result:any = await prisma.likeQuestion.create({data:{
+        const result = await prisma.likeQuestion.create({data:{
             questionId:input.questionId,
             userId: ctx.session.user.id,
             likeType:input.likeType

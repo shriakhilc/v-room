@@ -35,7 +35,7 @@ const publicRoutes = createRouter()
             //     where: { answerId },
             //     select: defaultAnswerSelect,
             // });
-            const result: any = await prisma.answer.findUnique({
+            const result = await prisma.answer.findUnique({
                 where: {
                     answerId: answerId
                 },
@@ -64,31 +64,32 @@ const publicRoutes = createRouter()
                     message: `No answer with id '${answerId}'`,
                 });
             }
-
+            
+            const filteredResult = JSON.parse(JSON.stringify(result));
             //This loop is for getting likes and dislikes for the children of particular answerId
-            for (let index = 0; index < result.Children.length; index++) {
+            for (let index = 0; index < filteredResult.Children.length; index++) {
 
-                let childrenDislikes = result?.Children[index].likes.filter(function (e: any) {
+                let childrenDislikes = filteredResult?.Children[index].likes.filter(function (e: { likeType: string; }) {
                     return e.likeType === 'dislike';
                 });
-                let childrenLikes = result?.Children[index].likes.filter(function (e: any) {
+                let childrenLikes = filteredResult?.Children[index].likes.filter(function (e: { likeType: string; }) {
                     return e.likeType === 'like';
                 });
 
-                result.Children[index].likes = childrenLikes;
-                result.Children[index]['dislikes'] = childrenDislikes;
+                filteredResult.Children[index].likes = childrenLikes;
+                filteredResult.Children[index]['dislikes'] = childrenDislikes;
 
             }
-            let dislikes = result?.likes.filter(function (e: any) {
+            let dislikes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
                 return e.likeType === 'dislike';
             });
-            let likes = result?.likes.filter(function (e: any) {
+            let likes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
                 return e.likeType === 'like';
             });
 
-            result.likes = likes;
-            result['dislikes'] = dislikes;
-            return result;
+            filteredResult.likes = likes;
+            filteredResult['dislikes'] = dislikes;
+            return filteredResult;
         },
     })
     .query('nestedAnswers', {
