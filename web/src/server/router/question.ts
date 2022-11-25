@@ -257,6 +257,7 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
+                
                 answerResult = getAnswerLikes(answerResult, input.classroomId);
                 return { questions: questionResult, answers: answerResult };
             }
@@ -360,7 +361,7 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-                
+
                 if(input.classroomId)
                 {
                     answerResult = getAnswerLikes(answerResult, input.classroomId);
