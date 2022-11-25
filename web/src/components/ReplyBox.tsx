@@ -26,14 +26,35 @@ export default function ReplyBox(props: ReplyBoxProps) {
     const { data, status } = useSession();
     //const { data: answers, status: classroomStatus } = trpc.useQuery(['answer.nestedAnswers', { answerId: this.props.answer.answerId }]);
 
-    const addAnswer = trpc.useMutation('answer.add');
+    const addToQuestion = trpc.useMutation('answer.addToQuestion');
+    const addToAnswer = trpc.useMutation('answer.addToAnswer');
     const deleteAnswer = trpc.useMutation('answer.delete');
     const updateAnswer = trpc.useMutation('answer.update');
 
     const addAnswerToQuestion = async () => {
-        await addAnswer.mutateAsync(
+        await addToQuestion.mutateAsync(
             {
-                questionId: props.parent.questionId,
+                questionId: (props.parent as Question).questionId,
+                userId: props.user.id,
+                answerStr: replyText,
+                parent_id: (props.parent as Question).questionId,
+            },
+            {
+                onSuccess: () => router.replace(router.asPath),
+                onError(error) {
+                    // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                    console.log(`Adding answer: ERROR: ${error}`);
+                },
+            }
+        );
+        setReplyText("");
+        setReplying(false);
+    }
+
+    const addAnswerToAnswer = async () => {
+        await addToAnswer.mutateAsync(
+            {
+                parent_id: (props.parent as Answer).answerId,
                 userId: props.user.id,
                 answerStr: replyText,
             },

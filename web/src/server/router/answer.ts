@@ -65,31 +65,7 @@ const publicRoutes = createRouter()
                 });
             }
             
-            const filteredResult = JSON.parse(JSON.stringify(result));
-            //This loop is for getting likes and dislikes for the children of particular answerId
-            for (let index = 0; index < filteredResult.Children.length; index++) {
-
-                let childrenDislikes = filteredResult?.Children[index].likes.filter(function (e: { likeType: string; }) {
-                    return e.likeType === 'dislike';
-                });
-                let childrenLikes = filteredResult?.Children[index].likes.filter(function (e: { likeType: string; }) {
-                    return e.likeType === 'like';
-                });
-
-                filteredResult.Children[index].likes = childrenLikes;
-                filteredResult.Children[index]['dislikes'] = childrenDislikes;
-
-            }
-            let dislikes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
-                return e.likeType === 'dislike';
-            });
-            let likes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
-                return e.likeType === 'like';
-            });
-
-            filteredResult.likes = likes;
-            filteredResult['dislikes'] = dislikes;
-            return filteredResult;
+            return result;
         },
     })
     .query('nestedAnswers', {
@@ -99,8 +75,9 @@ const publicRoutes = createRouter()
         async resolve({ input }) {
             const { answerId } = input;
             const nestedAnswers = await prisma.answer.findMany({
-                where: { questionId: answerId },
+                where: { parent_id: answerId },
                 include: {
+                    Children: true,
                     user: true
                 }
             });
@@ -118,18 +95,39 @@ const publicRoutes = createRouter()
 // Endpoints that need to authenticate user
 // ctx.session and ctx.session.user are already validated to be non-null
 const authRoutes = createProtectedRouter()
-    .mutation('add', {
+    .mutation('addToQuestion', {
         input: z.object({
             answerStr: z.string(),
             questionId: z.string().cuid(),
             userId: z.string().cuid(),
-            parent_id:z.string().cuid()
+            parent_id: z.string().cuid()
         }),
         async resolve({ input }) {
             const answer = await prisma.answer.create({
                 data: {
                     answerStr: input.answerStr,
                     questionId: input.questionId,
+                    userId: input.userId,
+                    parent_id:input.parent_id,
+                    createdAt:new Date(),
+                    updatedAt:new Date()
+                },
+                select: defaultAnswerSelect,
+            });
+
+            return answer;
+        },
+        }) 
+        .mutation('addToAnswer', {
+        input: z.object({
+            answerStr: z.string(),
+            userId: z.string().cuid(),
+            parent_id: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const answer = await prisma.answer.create({
+                data: {
+                    answerStr: input.answerStr,
                     userId: input.userId,
                     parent_id:input.parent_id,
                     createdAt:new Date(),

@@ -1,4 +1,4 @@
-import { LikeType, Prisma, UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../db/client';
@@ -51,6 +51,11 @@ const publicRoutes = createRouter()
                     user: true,
                     answer: {
                         include: {
+                            Children: {
+                                include: {
+                                    likes: true
+                                }
+                            }, 
                             user: true,
                             likes: true
                         }
@@ -64,28 +69,7 @@ const publicRoutes = createRouter()
                     message: `No question with id '${questionId}'`,
                 });
             }
-
-            const filteredResult = JSON.parse(JSON.stringify(result));
-            let dislikes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
-                return e.likeType === 'dislike';
-            });
-            let likes = filteredResult?.likes.filter(function (e: { likeType: string; }) {
-                return e.likeType === 'like';
-            });
-            filteredResult.likes = likes;
-            filteredResult['dislikes'] = dislikes;
-            for (let i = 0; i < filteredResult.answer.length; i++) {
-                let dislikes = filteredResult?.answer[i]?.likes.filter(function (e: { likeType: string; }) {
-                    return e.likeType === 'dislike';
-                });
-                let likes = filteredResult?.answer[i]?.likes.filter(function (e: { likeType: string; }) {
-                    return e.likeType === 'like';
-                });
-
-                filteredResult.answer[i].likes = likes;
-                filteredResult.answer[i]['dislikes'] = dislikes;
-            }
-            return filteredResult
+            return result;
         },
     })
     .query('byClassroom', {
@@ -103,6 +87,11 @@ const publicRoutes = createRouter()
                         answer:
                         {
                             include: {
+                                Children: {
+                                    include: {
+                                        likes: true
+                                    }
+                                },
                                 likes: true,
                                 user: true
                             },
@@ -122,28 +111,6 @@ const publicRoutes = createRouter()
                     message: `No question with id '${classroomId}'`,
                 });
             }
-            result.forEach((element: { [x: string]: any; likes: any[]; }) => {
-                let dislikes = element?.likes.filter(function (e) {
-                    return e.likeType === 'dislike';
-                });
-                let likes = element?.likes.filter(function (e) {
-                    return e.likeType === 'like';
-                });
-
-                element.likes = likes;
-                element['dislikes'] = dislikes;
-                for (let i = 0; i < element.answer.length; i++) {
-                    let dislikes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
-                        return e.likeType === 'dislike';
-                    });
-                    let likes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
-                        return e.likeType === 'like';
-                    });
-
-                    element.answer[i].likes = likes;
-                    element.answer[i]['dislikes'] = dislikes;
-                }
-            });
             return result;
         },
     })
@@ -177,6 +144,11 @@ const publicRoutes = createRouter()
                         answer:
                         {
                             include: {
+                                Children: {
+                                    include: {
+                                        likes: true
+                                    }
+                                },
                                 likes: true,
                                 user: true
                             },
@@ -184,8 +156,6 @@ const publicRoutes = createRouter()
 
                     },
                 });
-
-                questionResult = getQuestionLikes(questionResult);
 
                 answerResult = await prisma.answer.findMany({
                     where: {
@@ -196,6 +166,11 @@ const publicRoutes = createRouter()
                     include: {
                         likes: true,
                         user: true,
+                        Children: {
+                            include: {
+                                likes: true
+                            }
+                        },
                         question:
                         {
                             include:
@@ -205,8 +180,6 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-
-                answerResult = getAnswerLikes(answerResult);
                 return { questions: questionResult, answers: answerResult };
             }
             else if (input.classroomId && !input.userId) {
@@ -230,6 +203,11 @@ const publicRoutes = createRouter()
                         answer:
                         {
                             include: {
+                                Children: {
+                                    include: {
+                                        likes: true
+                                    }
+                                },
                                 likes: true,
                                 user: true
                             },
@@ -237,7 +215,6 @@ const publicRoutes = createRouter()
 
                     },
                 });
-                questionResult = getQuestionLikes(questionResult);
 
                 answerResult = await prisma.answer.findMany({
                     where: {
@@ -248,6 +225,11 @@ const publicRoutes = createRouter()
                     include: {
                         likes: true,
                         user: true,
+                        Children: {
+                            include: {
+                                likes: true
+                            }
+                        },
                         question:
                         {
                             include:
@@ -258,7 +240,6 @@ const publicRoutes = createRouter()
                     }
                 });
                 
-                answerResult = getAnswerLikes(answerResult, input.classroomId);
                 return { questions: questionResult, answers: answerResult };
             }
 
@@ -283,6 +264,11 @@ const publicRoutes = createRouter()
                         answer:
                         {
                             include: {
+                                Children: {
+                                    include: {
+                                        likes: true
+                                    }
+                                },
                                 likes: true,
                                 user: true
                             },
@@ -290,7 +276,6 @@ const publicRoutes = createRouter()
 
                     },
                 });
-                questionResult = getQuestionLikes(questionResult);
                 answerResult = await prisma.answer.findMany({
                     where: {
                         answerStr: {
@@ -300,6 +285,11 @@ const publicRoutes = createRouter()
                     include: {
                         likes: true,
                         user: true,
+                        Children: {
+                            include: {
+                                likes: true
+                            }
+                        },
                         question:
                         {
                             include:
@@ -309,7 +299,6 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-                answerResult = getAnswerLikes(answerResult);
                 return { questions: questionResult, answers: answerResult };
             }
 
@@ -335,6 +324,11 @@ const publicRoutes = createRouter()
                         answer:
                         {
                             include: {
+                                Children: {
+                                    include: {
+                                        likes: true
+                                    }
+                                },
                                 likes: true,
                                 user: true
                             },
@@ -342,7 +336,6 @@ const publicRoutes = createRouter()
 
                     },
                 });
-                questionResult = getQuestionLikes(questionResult);
                 answerResult = await prisma.answer.findMany({
                     where: {
                         answerStr: {
@@ -350,6 +343,11 @@ const publicRoutes = createRouter()
                         },
                     },
                     include: {
+                        Children: {
+                            include: {
+                                likes: true
+                            }
+                        },
                         likes: true,
                         user: true,
                         question:
@@ -361,11 +359,6 @@ const publicRoutes = createRouter()
                         }
                     }
                 });
-
-                if(input.classroomId)
-                {
-                    answerResult = getAnswerLikes(answerResult, input.classroomId);
-                }
                
                 return { questions: questionResult, answers: answerResult };
             }
@@ -480,55 +473,6 @@ const authRoutes = createProtectedRouter()
             }
         },
     });
-
-const getQuestionLikes = (questionResult: { [x: string]: any; likes: any[]; }[]) => {
-    questionResult.forEach((element: { [x: string]: any; likes: any[]; }) => {
-        let dislikes = element?.likes.filter(function (e) {
-            return e.likeType === 'dislike';
-        });
-        let likes = element?.likes.filter(function (e) {
-            return e.likeType === 'like';
-        });
-
-        element.likes = likes;
-        element['dislikes'] = dislikes;
-        for (let i = 0; i < element.answer.length; i++) {
-            let dislikes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
-                return e.likeType === 'dislike';
-            });
-            let likes = element?.answer[i].likes.filter(function (e: { likeType: string; }) {
-                return e.likeType === 'like';
-            });
-
-            element.answer[i].likes = likes;
-            element.answer[i]['dislikes'] = dislikes;
-        }
-    });
-    return questionResult;
-}
-
-const getAnswerLikes = (answerResult: any[], classroomId?: string) => {
-    let filteredAnswers;
-    if (classroomId) {
-        filteredAnswers = answerResult.filter(function (e: { question: { classroomId: string; }; }) {
-            return e.question.classroomId = classroomId;
-        });
-    }
-    else {
-        filteredAnswers = answerResult;
-    }
-    for (let i = 0; i < filteredAnswers.length; i++) {
-        let dislikes = filteredAnswers[i]?.likes.filter(function (e: { likeType: string; }) {
-            return e.likeType === 'dislike';
-        });
-        let likes = filteredAnswers[i]?.likes.filter(function (e: { likeType: string; }) {
-            return e.likeType === 'like';
-        });
-        filteredAnswers[i].likes = likes;
-        filteredAnswers[i].dislikes = dislikes;
-    }
-    return filteredAnswers;
-}
 
 // Combine all routes for this model
 export const questionRouter = publicRoutes.merge(authRoutes);

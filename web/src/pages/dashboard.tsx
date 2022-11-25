@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { trpc } from '@/src/utils/trpc';
+import { useSession } from 'next-auth/react';
 const Dashboard = () => {
   const [newData, setNewData] = useState("");
+  const { data: session, status: sessionStatus } = useSession();
   trpc.useQuery(
     ['user.getClassrooms', { id: session!.user!.id }],
     {

@@ -25,7 +25,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
     const [questionTitle, setQuestionTitle] = useState(props.question.questionTitle);
     const [editing, setEditing] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
-    const addAnswer = trpc.useMutation('answer.add');
+    const addAnswer = trpc.useMutation('answer.addToQuestion');
     const deleteQuestion = trpc.useMutation('question.delete');
     const updateQuestion = trpc.useMutation('question.update');
     const utils = trpc.useContext();
@@ -37,6 +37,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                 questionId: props.question.questionId,
                 userId: data?.user?.id as string,
                 answerStr: replyText,
+                parent_id: props.question.questionId,
             },
             {
                 onSuccess: () => {
