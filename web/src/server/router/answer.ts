@@ -51,7 +51,8 @@ const publicRoutes = createRouter()
                     },
                     Children: {
                         include: {
-                            likes: true
+                            likes: true,
+                            user: true
                         }
                     }
                 },
@@ -77,7 +78,7 @@ const publicRoutes = createRouter()
             const nestedAnswers = await prisma.answer.findMany({
                 where: { parent_id: answerId },
                 include: {
-                    Children: true,
+                    likes: true,
                     user: true
                 }
             });

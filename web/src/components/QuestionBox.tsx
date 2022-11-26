@@ -9,7 +9,15 @@ import ReplyBox from "./ReplyBox";
 interface QuestionBoxProps {
     question: Question,
     answers: Prisma.AnswerGetPayload<{
-        include: { user: true }
+        include: {
+            Children?: {
+                include: {
+                    likes: true
+                }
+            },
+            likes: true,
+            user: true
+        },
     }>[],
     user: User,
     router: NextRouter,
@@ -43,6 +51,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                 onSuccess: () => {
                     utils.invalidateQueries(["question.byClassroom"]);
                     utils.invalidateQueries(["question.bySearchStr"]);
+                    utils.invalidateQueries(["answer.nestedAnswers"]);
                 },
                 onError(error) {
                     // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -64,6 +73,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     setDeleteConfirm(false);
                     utils.invalidateQueries(["question.byClassroom"]);
                     utils.invalidateQueries(["question.bySearchStr"]);
+                    utils.invalidateQueries(["answer.nestedAnswers"]);
                 },
                 onError(error) {
                     // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -85,6 +95,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     setEditing(false)
                     utils.invalidateQueries(["question.byClassroom"]);
                     utils.invalidateQueries(["question.bySearchStr"]);
+                    utils.invalidateQueries(["answer.nestedAnswers"]);
                 },
                 onError(error) {
                     // Forbidden error based on user role, should not occur normally since menu only visible to instructors

@@ -53,7 +53,8 @@ const publicRoutes = createRouter()
                         include: {
                             Children: {
                                 include: {
-                                    likes: true
+                                    likes: true,
+                                    user: true
                                 }
                             }, 
                             user: true,
@@ -89,7 +90,8 @@ const publicRoutes = createRouter()
                             include: {
                                 Children: {
                                     include: {
-                                        likes: true
+                                        likes: true,
+                                        user: true
                                     }
                                 },
                                 likes: true,
@@ -146,7 +148,8 @@ const publicRoutes = createRouter()
                             include: {
                                 Children: {
                                     include: {
-                                        likes: true
+                                        likes: true,
+                                        user: true
                                     }
                                 },
                                 likes: true,
@@ -166,11 +169,6 @@ const publicRoutes = createRouter()
                     include: {
                         likes: true,
                         user: true,
-                        Children: {
-                            include: {
-                                likes: true
-                            }
-                        },
                         question:
                         {
                             include:
@@ -205,7 +203,8 @@ const publicRoutes = createRouter()
                             include: {
                                 Children: {
                                     include: {
-                                        likes: true
+                                        likes: true,
+                                        user: true
                                     }
                                 },
                                 likes: true,
@@ -225,11 +224,6 @@ const publicRoutes = createRouter()
                     include: {
                         likes: true,
                         user: true,
-                        Children: {
-                            include: {
-                                likes: true
-                            }
-                        },
                         question:
                         {
                             include:
@@ -266,7 +260,8 @@ const publicRoutes = createRouter()
                             include: {
                                 Children: {
                                     include: {
-                                        likes: true
+                                        likes: true,
+                                        user: true
                                     }
                                 },
                                 likes: true,
@@ -285,11 +280,6 @@ const publicRoutes = createRouter()
                     include: {
                         likes: true,
                         user: true,
-                        Children: {
-                            include: {
-                                likes: true
-                            }
-                        },
                         question:
                         {
                             include:
@@ -326,7 +316,8 @@ const publicRoutes = createRouter()
                             include: {
                                 Children: {
                                     include: {
-                                        likes: true
+                                        likes: true,
+                                        user: true
                                     }
                                 },
                                 likes: true,
@@ -343,11 +334,6 @@ const publicRoutes = createRouter()
                         },
                     },
                     include: {
-                        Children: {
-                            include: {
-                                likes: true
-                            }
-                        },
                         likes: true,
                         user: true,
                         question:
