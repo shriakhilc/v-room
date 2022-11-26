@@ -1,8 +1,13 @@
-import { Answer, Prisma, Question, User, UserRole } from "@prisma/client";
+import { Answer, LikeType, Prisma, Question, User, UserRole } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { trpc } from "../utils/trpc";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faArrowUp,
+    faArrowDown
+  } from "@fortawesome/free-solid-svg-icons";
 
 interface ReplyBoxProps {
     nestings: number,
@@ -36,7 +41,25 @@ export default function ReplyBox(props: ReplyBoxProps) {
     const addToAnswer = trpc.useMutation('answer.addToAnswer');
     const deleteAnswer = trpc.useMutation('answer.delete');
     const updateAnswer = trpc.useMutation('answer.update');
+    const addLike = trpc.useMutation('likeAnswer.voteAnswer');
+    const removeLike = trpc.useMutation('likeAnswer.removeVote');
+    const updateLike = trpc.useMutation('likeAnswer.updateVote');
     const { data: answerChildren, status: answerChildrenStatus } = trpc.useQuery(['answer.nestedAnswers', { answerId: props.answer.answerId }]);
+
+    const getCurrentLike = () => {
+        const existingLike = props.answer.likes.find(like => like.userId === props.user.id);
+        if(existingLike && existingLike.likeType == LikeType.like) {
+            return 1
+        }
+        else if(existingLike && existingLike.likeType == LikeType.dislike) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    const [currentLike, setCurrentLike] = useState(getCurrentLike());
 
     const addAnswerToAnswer = async () => {
         await addToAnswer.mutateAsync(
@@ -103,6 +126,92 @@ export default function ReplyBox(props: ReplyBoxProps) {
         );
     }
 
+    const updateLikeStatus = async (e: LikeType) => {
+        const existingLike = props.answer.likes.find(like => like.userId === props.user.id);
+        if(existingLike && existingLike.likeType === e) {
+            setCurrentLike(0);
+            await removeLike.mutateAsync( 
+                {
+                    userId: props.user.id,
+                    answerId: props.answer.answerId,
+                },
+                {
+                    onSuccess: () => {
+                        utils.invalidateQueries(["question.byClassroom"]);
+                        utils.invalidateQueries(["question.bySearchStr"]);
+                        utils.invalidateQueries(["answer.nestedAnswers"]);
+                    },
+                    onError(error) {
+                        // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                        console.log(`Removing vote ERROR: ${error}`);
+                    },
+                }
+            );
+        }
+        else if(existingLike) {
+            if(e === LikeType.like) {
+                setCurrentLike(1);
+            }
+            else {
+                setCurrentLike(-1);
+            }
+            await updateLike.mutateAsync( 
+                {
+                    userId: props.user.id,
+                    answerId: props.answer.answerId,
+                    likeType: e
+                },
+                {
+                    onSuccess: () => {
+                        utils.invalidateQueries(["question.byClassroom"]);
+                        utils.invalidateQueries(["question.bySearchStr"]);
+                        utils.invalidateQueries(["answer.nestedAnswers"]);
+                    },
+                    onError(error) {
+                        // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                        console.log(`Updating vote ERROR: ${error}`);
+                    },
+                }
+            );
+
+        }
+        else {
+            if(e === LikeType.like) {
+                setCurrentLike(1);
+            }
+            else {
+                setCurrentLike(-1)
+            }
+            await addLike.mutateAsync( 
+                {
+                    userId: props.user.id,
+                    answerId: props.answer.answerId,
+                    likeType: e
+                },
+                {
+                    onSuccess: () => {
+                        utils.invalidateQueries(["question.byClassroom"]);
+                        utils.invalidateQueries(["question.bySearchStr"]);
+                        utils.invalidateQueries(["answer.nestedAnswers"]);
+                    },
+                    onError(error) {
+                        // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                        console.log(`Adding vote ERROR: ${error}`);
+                    },
+                }
+            );
+
+        }
+    }
+
+    const getLikeCount = () => {
+        return props.answer.likes.filter(like => like.likeType === LikeType.like).length;
+    }
+
+    const getDislikeCount = () => {
+        return props.answer.likes.filter(like => like.likeType === LikeType.dislike).length;
+    }
+
     return (
         
         
@@ -116,7 +225,41 @@ export default function ReplyBox(props: ReplyBoxProps) {
                         <textarea onChange={(e) => setAnswerText(e.currentTarget.value)} value={answerText} className="border rounded-md border-black min-w-full"></textarea>
                     </div>
                 }
-                <p className="py-2 text-grey-200 border-t-2 text-gray-500 border-gray-300"><>Posted by {props.user.name} on {props.answer.createdAt.toLocaleDateString('en-US')}</></p>
+                <div className="flex flex-row justify-between">
+                    <div className="py-2 text-grey-200 border-t-2 text-gray-500 border-gray-300"><>Posted by {props.user.name} on {props.answer.createdAt.toLocaleDateString('en-US')}</></div>
+                    <div className="text-red-500 flex flex-row align-center"> 
+                        {currentLike <= 0 &&  
+                            <FontAwesomeIcon
+                                icon={faArrowUp}
+                                onClick={ () => {updateLikeStatus(LikeType.like)}}
+                                className="hover:bg-red-500 hover:cursor-pointer hover:text-white rounded p-1"
+                            />
+                        }
+                        {currentLike == 1 &&
+                            <FontAwesomeIcon
+                            icon={faArrowUp}
+                            onClick={ () => {updateLikeStatus(LikeType.like)}}
+                            className="bg-red-500 hover:cursor-pointer text-white rounded p-1"
+                            />
+                        }
+                        <div>&nbsp;{getLikeCount()}&nbsp;</div>
+                        {currentLike >= 0 &&  
+                            <FontAwesomeIcon
+                                icon={faArrowDown}
+                                onClick={ () => {updateLikeStatus(LikeType.dislike)}}
+                                className="hover:bg-red-500 hover:cursor-pointer hover:text-white rounded p-1"
+                            />
+                        }
+                        {currentLike == -1 &&
+                            <FontAwesomeIcon
+                            icon={faArrowDown}
+                            onClick={ () => {updateLikeStatus(LikeType.dislike)}}
+                            className="bg-red-500 hover:cursor-pointer text-white rounded p-1"
+                            />
+                        }
+                        <div>&nbsp;{getDislikeCount()}&nbsp;</div>
+                    </div>
+                </div>
                 {(answerChildrenStatus == "success" && props.nestings < props.MAX_NESTINGS) && 
                     <ul>
                         {answerChildren.map(answer => (

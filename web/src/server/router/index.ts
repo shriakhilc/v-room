@@ -7,6 +7,8 @@ import { meetingRouter } from "./meeting";
 import { questionRouter } from "./question";
 import { userRouter } from "./user";
 import { userOnClassroomRouter } from "./userOnClassroom";
+import { voteAnswerRouter } from "./voteAnswer";
+import { voteQuestionRouter } from "./voteQuestion";
 
 export const appRouter = createRouter()
   .transformer(superjson)
@@ -15,7 +17,9 @@ export const appRouter = createRouter()
   .merge("question.", questionRouter)
   .merge("answer.", answerRouter)
   .merge("userOnClassroom.", userOnClassroomRouter)
-  .merge('meeting.', meetingRouter);
+  .merge('meeting.', meetingRouter)
+  .merge('likeQuestion.', voteQuestionRouter)
+  .merge('likeAnswer.', voteAnswerRouter);
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
