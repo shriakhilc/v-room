@@ -77,8 +77,42 @@ const QuestionListPage: NextPage = () => {
   }
 
   function compareFn(
-    a: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>, 
-    b: Prisma.QuestionGetPayload<{include: { user: true, classroom: true, answer: {include: {user: true}}}}>) {
+    a: Prisma.QuestionGetPayload<{include: {
+      likes: true,
+      user: true,
+      classroom: true,
+      answer:
+      {
+          include: {
+              Children: {
+                  include: {
+                      likes: true
+                  }
+              },
+              likes: true,
+              user: true
+          },
+      },
+
+    }}>, 
+    b: Prisma.QuestionGetPayload<{include: {
+      likes: true,
+      user: true,
+      classroom: true,
+      answer:
+      {
+          include: {
+              Children: {
+                  include: {
+                      likes: true
+                  }
+              },
+              likes: true,
+              user: true
+          },
+      },
+
+    }}>) {
    
       console.log("compare");
       if(sortStr == "name") {
@@ -243,7 +277,7 @@ const QuestionListPage: NextPage = () => {
                 }
                 {(searchStr != "" && searchQuestions) &&
                   <ul>
-                    {[...searchQuestions].sort(compareFn).map(question => (
+                    {searchQuestions.questions.sort(compareFn).map(question => (
                       <li key={question.questionId}>
                         <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
                       </li>

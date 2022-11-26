@@ -20,7 +20,9 @@ const defaultQuestionSelect = Prisma.validator<Prisma.QuestionSelect>()({
     createdAt: true,
     updatedAt: true,
     answer: true,
+    likes: true,
 });
+
 
 // Endpoints that do not need to authenticate user
 const publicRoutes = createRouter()
@@ -42,25 +44,33 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { questionId } = input;
-            const question = await prisma.question.findUnique({
+            const result = await prisma.question.findUnique({
                 where: { questionId },
                 include: {
                     classroom: true,
                     user: true,
                     answer: {
                         include: {
-                            user: true
+                            Children: {
+                                include: {
+                                    likes: true,
+                                    user: true
+                                }
+                            }, 
+                            user: true,
+                            likes: true
                         }
                     },
+                    likes:true
                 },
             });
-            if (!question) {
+            if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
                     message: `No question with id '${questionId}'`,
                 });
             }
-            return question;
+            return result;
         },
     })
     .query('byClassroom', {
@@ -69,25 +79,41 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { classroomId } = input;
-            const question = await prisma.question.findMany({
-                where: { classroomId },
-                include: {
-                    classroom: true,
-                    user: true,
-                    answer: {
-                        include: {
-                            user: true
-                        }
+            const result = await prisma.question.findMany(
+                {
+                    orderBy: {
+                        updatedAt: 'desc'
                     },
-                },
-            });
-            if (!question) {
+                    include: {
+                        answer:
+                        {
+                            include: {
+                                Children: {
+                                    include: {
+                                        likes: true,
+                                        user: true
+                                    }
+                                },
+                                likes: true,
+                                user: true
+                            },
+                        },
+                        likes: true,
+                        classroom: true,
+                        user: true
+                    },
+                    where: {
+                        classroomId: classroomId
+                    }
+                }
+            );
+            if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
                     message: `No question with id '${classroomId}'`,
                 });
             }
-            return question;
+            return result;
         },
     })
     .query('bySearchStr', {
@@ -99,8 +125,9 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { searchStr } = input;
+            let questionResult, answerResult;
             if (!input.classroomId && !input.userId) {
-                const question = await prisma.question.findMany({
+                questionResult = await prisma.question.findMany({
                     where: {
                         questionStr: {
                             search: searchStr,
@@ -109,20 +136,52 @@ const publicRoutes = createRouter()
                             search: searchStr,
                         }
                     },
+                    orderBy: {
+                        updatedAt: 'desc'
+                    },
                     include: {
-                        classroom: true,
+                        likes: true,
                         user: true,
-                        answer: {
+                        classroom: true,
+                        answer:
+                        {
                             include: {
+                                Children: {
+                                    include: {
+                                        likes: true,
+                                        user: true
+                                    }
+                                },
+                                likes: true,
                                 user: true
-                            }
+                            },
                         },
+
                     },
                 });
-                return question;
+
+                answerResult = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                            search: searchStr,
+                        },
+                    },
+                    include: {
+                        likes: true,
+                        user: true,
+                        question:
+                        {
+                            include:
+                            {
+                                classroom: true,
+                            }
+                        }
+                    }
+                });
+                return { questions: questionResult, answers: answerResult };
             }
             else if (input.classroomId && !input.userId) {
-                const question = await prisma.question.findMany({
+                questionResult = await prisma.question.findMany({
                     where: {
                         classroomId: input.classroomId,
                         questionStr: {
@@ -130,22 +189,56 @@ const publicRoutes = createRouter()
                         },
                         questionTitle: {
                             search: searchStr,
+                        }
+                    },
+                    orderBy: {
+                        updatedAt: 'desc'
+                    },
+                    include: {
+                        likes: true,
+                        user: true,
+                        classroom: true,
+                        answer:
+                        {
+                            include: {
+                                Children: {
+                                    include: {
+                                        likes: true,
+                                        user: true
+                                    }
+                                },
+                                likes: true,
+                                user: true
+                            },
+                        },
+
+                    },
+                });
+
+                answerResult = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                            search: searchStr,
                         },
                     },
                     include: {
-                        classroom: true,
+                        likes: true,
                         user: true,
-                        answer: {
-                            include: {
-                                user: true
+                        question:
+                        {
+                            include:
+                            {
+                                classroom: true,
                             }
-                        },
-                    },
+                        }
+                    }
                 });
-                return question;
+                
+                return { questions: questionResult, answers: answerResult };
             }
+
             else if (input.userId && !input.classroomId) {
-                const question = await prisma.question.findMany({
+                questionResult = await prisma.question.findMany({
                     where: {
                         userId: input.userId,
                         questionStr: {
@@ -153,22 +246,54 @@ const publicRoutes = createRouter()
                         },
                         questionTitle: {
                             search: searchStr,
+                        }
+                    },
+                    orderBy: {
+                        updatedAt: 'desc'
+                    },
+                    include: {
+                        likes: true,
+                        user: true,
+                        classroom: true,
+                        answer:
+                        {
+                            include: {
+                                Children: {
+                                    include: {
+                                        likes: true,
+                                        user: true
+                                    }
+                                },
+                                likes: true,
+                                user: true
+                            },
+                        },
+
+                    },
+                });
+                answerResult = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                            search: searchStr,
                         },
                     },
                     include: {
-                        classroom: true,
+                        likes: true,
                         user: true,
-                        answer: {
-                            include: {
-                                user: true
+                        question:
+                        {
+                            include:
+                            {
+                                classroom: true,
                             }
-                        },
-                    },
+                        }
+                    }
                 });
-                return question;
+                return { questions: questionResult, answers: answerResult };
             }
+
             else {
-                const question = await prisma.question.findMany({
+                questionResult = await prisma.question.findMany({
                     where: {
                         userId: input.userId as string,
                         classroomId: input.classroomId as string,
@@ -177,21 +302,52 @@ const publicRoutes = createRouter()
                         },
                         questionTitle: {
                             search: searchStr,
+                        }
+                    },
+                    orderBy: {
+                        updatedAt: 'desc'
+                    },
+                    include: {
+                        likes: true,
+                        user: true,
+                        classroom: true,
+                        answer:
+                        {
+                            include: {
+                                Children: {
+                                    include: {
+                                        likes: true,
+                                        user: true
+                                    }
+                                },
+                                likes: true,
+                                user: true
+                            },
+                        },
+
+                    },
+                });
+                answerResult = await prisma.answer.findMany({
+                    where: {
+                        answerStr: {
+                            search: searchStr,
                         },
                     },
                     include: {
-                        classroom: true,
+                        likes: true,
                         user: true,
-                        answer: {
-                            include: {
-                                user: true
+                        question:
+                        {
+                            include:
+                            {
+                                classroom: true,
                             }
-                        },
-                    },
+                        }
+                    }
                 });
-                return question;
+               
+                return { questions: questionResult, answers: answerResult };
             }
-            return [];
         },
     });
 

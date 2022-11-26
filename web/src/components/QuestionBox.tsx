@@ -1,15 +1,31 @@
-import { Prisma, Question, User, UserRole } from "@prisma/client";
+import { LikeType, Prisma, Question, User, UserRole } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { NextRouter } from "next/router";
 import { useState } from "react";
-import { classroomRouter } from "../server/router/classroom";
 import { trpc } from "../utils/trpc";
 import ReplyBox from "./ReplyBox";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faArrowUp,
+    faArrowDown
+  } from "@fortawesome/free-solid-svg-icons";
 
 interface QuestionBoxProps {
-    question: Question,
+    question: Prisma.QuestionGetPayload<{
+        include: {
+            likes: true
+        }
+    }>,
     answers: Prisma.AnswerGetPayload<{
-        include: { user: true }
+        include: {
+            Children?: {
+                include: {
+                    likes: true
+                }
+            },
+            likes: true,
+            user: true
+        },
     }>[],
     user: User,
     router: NextRouter,
@@ -25,11 +41,29 @@ export default function QuestionBox(props: QuestionBoxProps) {
     const [questionTitle, setQuestionTitle] = useState(props.question.questionTitle);
     const [editing, setEditing] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
-    const addAnswer = trpc.useMutation('answer.add');
+    const addAnswer = trpc.useMutation('answer.addToQuestion');
     const deleteQuestion = trpc.useMutation('question.delete');
     const updateQuestion = trpc.useMutation('question.update');
+    const addLike = trpc.useMutation('likeQuestion.voteQuestion');
+    const removeLike = trpc.useMutation('likeQuestion.removeVote');
+    const updateLike = trpc.useMutation('likeQuestion.updateVote');
     const utils = trpc.useContext();
     const { data, status } = useSession();
+
+    const getCurrentLike = () => {
+        const existingLike = props.question.likes.find(like => like.userId === props.user.id);
+        if(existingLike && existingLike.likeType == LikeType.like) {
+            return 1
+        }
+        else if(existingLike && existingLike.likeType == LikeType.dislike) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    const [currentLike, setCurrentLike] = useState(getCurrentLike());
 
     const addAnswerToQuestion = async () => {
         await addAnswer.mutateAsync(
@@ -37,11 +71,13 @@ export default function QuestionBox(props: QuestionBoxProps) {
                 questionId: props.question.questionId,
                 userId: data?.user?.id as string,
                 answerStr: replyText,
+                parent_id: props.question.questionId,
             },
             {
                 onSuccess: () => {
                     utils.invalidateQueries(["question.byClassroom"]);
                     utils.invalidateQueries(["question.bySearchStr"]);
+                    utils.invalidateQueries(["answer.nestedAnswers"]);
                 },
                 onError(error) {
                     // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -63,6 +99,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     setDeleteConfirm(false);
                     utils.invalidateQueries(["question.byClassroom"]);
                     utils.invalidateQueries(["question.bySearchStr"]);
+                    utils.invalidateQueries(["answer.nestedAnswers"]);
                 },
                 onError(error) {
                     // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -84,6 +121,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     setEditing(false)
                     utils.invalidateQueries(["question.byClassroom"]);
                     utils.invalidateQueries(["question.bySearchStr"]);
+                    utils.invalidateQueries(["answer.nestedAnswers"]);
                 },
                 onError(error) {
                     // Forbidden error based on user role, should not occur normally since menu only visible to instructors
@@ -91,6 +129,89 @@ export default function QuestionBox(props: QuestionBoxProps) {
                 },
             }
         );
+    }
+
+    const updateLikeStatus = async (e: LikeType) => {
+        const existingLike = props.question.likes.find(like => like.userId === props.user.id);
+        if(existingLike && existingLike.likeType === e) {
+            setCurrentLike(0);
+            await removeLike.mutateAsync( 
+                {
+                    userId: props.user.id,
+                    questionId: props.question.questionId,
+                },
+                {
+                    onSuccess: () => {
+                        utils.invalidateQueries(["question.byClassroom"]);
+                        utils.invalidateQueries(["question.bySearchStr"]);
+                    },
+                    onError(error) {
+                        // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                        console.log(`Removing vote ERROR: ${error}`);
+                    },
+                }
+            );
+        }
+        else if(existingLike) {
+            if(e === LikeType.like) {
+                setCurrentLike(1);
+            }
+            else {
+                setCurrentLike(-1);
+            }
+            await updateLike.mutateAsync( 
+                {
+                    userId: props.user.id,
+                    questionId: props.question.questionId,
+                    likeType: e
+                },
+                {
+                    onSuccess: () => {
+                        utils.invalidateQueries(["question.byClassroom"]);
+                        utils.invalidateQueries(["question.bySearchStr"]);
+                    },
+                    onError(error) {
+                        // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                        console.log(`Updating vote ERROR: ${error}`);
+                    },
+                }
+            );
+
+        }
+        else {
+            if(e === LikeType.like) {
+                setCurrentLike(1);
+            }
+            else {
+                setCurrentLike(-1)
+            }
+            await addLike.mutateAsync( 
+                {
+                    userId: props.user.id,
+                    questionId: props.question.questionId,
+                    likeType: e
+                },
+                {
+                    onSuccess: () => {
+                        utils.invalidateQueries(["question.byClassroom"]);
+                        utils.invalidateQueries(["question.bySearchStr"]);
+                    },
+                    onError(error) {
+                        // Forbidden error based on user role, should not occur normally since menu only visible to instructors
+                        console.log(`Adding vote ERROR: ${error}`);
+                    },
+                }
+            );
+
+        }
+    }
+
+    const getLikeCount = () => {
+        return props.question.likes.filter(like => like.likeType === LikeType.like).length;
+    }
+
+    const getDislikeCount = () => {
+        return props.question.likes.filter(like => like.likeType === LikeType.dislike).length;
     }
 
     return (
@@ -111,8 +232,42 @@ export default function QuestionBox(props: QuestionBoxProps) {
                     </div>
                 }
             </div>
-            <div className="py-2 text-md text-gray-500">
-                Asked by {props.user.name} on {props.question.createdAt.toLocaleDateString('en-US')}
+            <div className="flex flex-row justify-between">
+                <div className="py-2 text-md text-gray-500">
+                    Asked by {props.user.name} on {props.question.createdAt.toLocaleDateString('en-US')}
+                </div>
+                <div className="text-red-500 flex flex-row align-center"> 
+                    {currentLike <= 0 &&  
+                        <FontAwesomeIcon
+                            icon={faArrowUp}
+                            onClick={ () => {updateLikeStatus(LikeType.like)}}
+                            className="hover:bg-red-500 hover:cursor-pointer hover:text-white rounded p-1"
+                        />
+                    }
+                    {currentLike == 1 &&
+                        <FontAwesomeIcon
+                        icon={faArrowUp}
+                        onClick={ () => {updateLikeStatus(LikeType.like)}}
+                        className="bg-red-500 hover:cursor-pointer text-white rounded p-1"
+                        />
+                    }
+                    <div>&nbsp;{getLikeCount()}&nbsp;</div>
+                    {currentLike >= 0 &&  
+                        <FontAwesomeIcon
+                            icon={faArrowDown}
+                            onClick={ () => {updateLikeStatus(LikeType.dislike)}}
+                            className="hover:bg-red-500 hover:cursor-pointer hover:text-white rounded p-1"
+                        />
+                    }
+                    {currentLike == -1 &&
+                        <FontAwesomeIcon
+                        icon={faArrowDown}
+                        onClick={ () => {updateLikeStatus(LikeType.dislike)}}
+                        className="bg-red-500 hover:cursor-pointer text-white rounded p-1"
+                        />
+                    }
+                    <div>&nbsp;{getDislikeCount()}&nbsp;</div>
+                </div>
             </div>
 
 

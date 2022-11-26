@@ -19,6 +19,8 @@ const defaultAnswerSelect = Prisma.validator<Prisma.AnswerSelect>()({
     userId: true,
     createdAt: true,
     updatedAt: true,
+    likes: true,
+    parent_id: true
 });
 
 // Endpoints that do not need to authenticate user
@@ -29,17 +31,42 @@ const publicRoutes = createRouter()
         }),
         async resolve({ input }) {
             const { answerId } = input;
-            const answer = await prisma.answer.findUnique({
-                where: { answerId },
-                select: defaultAnswerSelect,
+            // const answer = await prisma.answer.findUnique({
+            //     where: { answerId },
+            //     select: defaultAnswerSelect,
+            // });
+            const result = await prisma.answer.findUnique({
+                where: {
+                    answerId: answerId
+                },
+                include: {
+                    likes: true,
+                    user: true,
+                    question:
+                    {
+                        include:
+                        {
+                            classroom: true,
+                        }
+                    },
+                    Children: {
+                        include: {
+                            likes: true,
+                            user: true
+                        }
+                    }
+                },
+
             });
-            if (!answer) {
+
+            if (!result) {
                 throw new TRPCError({
                     code: 'NOT_FOUND',
                     message: `No answer with id '${answerId}'`,
                 });
             }
-            return answer;
+            
+            return result;
         },
     })
     .query('nestedAnswers', {
@@ -49,8 +76,9 @@ const publicRoutes = createRouter()
         async resolve({ input }) {
             const { answerId } = input;
             const nestedAnswers = await prisma.answer.findMany({
-                where: { questionId: answerId },
+                where: { parent_id: answerId },
                 include: {
+                    likes: true,
                     user: true
                 }
             });
@@ -68,11 +96,12 @@ const publicRoutes = createRouter()
 // Endpoints that need to authenticate user
 // ctx.session and ctx.session.user are already validated to be non-null
 const authRoutes = createProtectedRouter()
-    .mutation('add', {
+    .mutation('addToQuestion', {
         input: z.object({
             answerStr: z.string(),
             questionId: z.string().cuid(),
             userId: z.string().cuid(),
+            parent_id: z.string().cuid()
         }),
         async resolve({ input }) {
             const answer = await prisma.answer.create({
@@ -80,6 +109,30 @@ const authRoutes = createProtectedRouter()
                     answerStr: input.answerStr,
                     questionId: input.questionId,
                     userId: input.userId,
+                    parent_id:input.parent_id,
+                    createdAt:new Date(),
+                    updatedAt:new Date()
+                },
+                select: defaultAnswerSelect,
+            });
+
+            return answer;
+        },
+        }) 
+        .mutation('addToAnswer', {
+        input: z.object({
+            answerStr: z.string(),
+            userId: z.string().cuid(),
+            parent_id: z.string().cuid(),
+        }),
+        async resolve({ input }) {
+            const answer = await prisma.answer.create({
+                data: {
+                    answerStr: input.answerStr,
+                    userId: input.userId,
+                    parent_id:input.parent_id,
+                    createdAt:new Date(),
+                    updatedAt:new Date()
                 },
                 select: defaultAnswerSelect,
             });
