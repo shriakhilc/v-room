@@ -2,7 +2,7 @@ import LocalStreamManager from '@/src/components/local_stream_manager';
 import { Session } from 'next-auth';
 import Peer, { DataConnection, MediaConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
-import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
+import { ChatMessage, DataEvent, DataPayload, IdMessage, ParticipantInfo, ParticipantListMessage } from '../utils/meetings';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
@@ -26,49 +26,38 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
         [hostId]
     );
 
-    const onNewConnection = useCallback(
-        (conn: DataConnection) => {
-            // Note: conn.peer is available even if conn isn't open yet
-            conn.on("data", (data) => {
-                console.log(`Received: ${JSON.stringify(data)}`);
-                const payload = data as DataPayload;
-                switch (payload.event) {
-                    case DataEvent.CHAT_MESSAGE: {
-                        setMessages(prev => [...prev, payload.data as ChatMessage]);
-                        break;
-                    }
-
-                    default: {
-                        // Do nothing on unknown events
-                        console.error(`Unknown event received: ${JSON.stringify(payload)}`);
-                        break;
-                    }
+    const handleChatMessages = useCallback(
+        (data: unknown) => {
+            const payload = data as DataPayload;
+            switch (payload.event) {
+                case DataEvent.CHAT_MESSAGE: {
+                    setMessages(prev => [...prev, payload.data as ChatMessage]);
+                    break;
                 }
-            });
 
-            conn.on("open", () => {
-                const payload: DataPayload = {
-                    event: DataEvent.CHAT_MESSAGE,
-                    data: {
-                        senderName: session?.user?.name ?? "Guest",
-                        timestamp: Date.now(),
-                        message: 'hi!'
-                    },
-                };
-                conn.send(payload);
-                console.log("Message sent to host");
-                setMessages(m => [...m, (payload.data as ChatMessage)]);
-            });
+                default: {
+                    // Do nothing on unknown events
+                    break;
+                }
+            }
+        },
+        []
+    );
+
+    const onIncomingConnection = useCallback(
+        (conn: DataConnection) => {
+            // anyone connecting to you is not a host, they can only send chat messages
+            conn.on("data", handleChatMessages);
 
             conn.on('close', () => {
                 // Remove participant from map
-                console.log(`Closing data conn ${conn.peer}`);
+                //console.log(`Closing data conn ${conn.peer}`);
                 setParticipantMap((prev) => {
                     const newMap = new Map(prev);
                     newMap.delete(conn.peer);
                     return newMap;
                 });
-            })
+            });
 
             // Creates new shallow Map using prev map + new conn
             setParticipantMap((prev) => (
@@ -80,21 +69,99 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 )
             ));
         },
-        [session]
+        [handleChatMessages]
     );
+
+    // only listeners, does not add peer to participant map
+    // adding should be handled by callers
+    const onOutgoingConnection = useCallback(
+        (conn: DataConnection) => {
+            conn.on("data", handleChatMessages);
+
+            conn.on('close', () => {
+                // Remove participant from map
+                //console.log(`Closing data conn ${conn.peer}`);
+                setParticipantMap((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(conn.peer);
+                    return newMap;
+                });
+            });
+        },
+        [handleChatMessages]
+    );
+
+    const handleHostMessages = useCallback(
+        (data: unknown) => {
+            const payload = data as DataPayload;
+            switch (payload.event) {
+                case DataEvent.CHAT_MESSAGE: {
+                    handleChatMessages(data);
+                    break;
+                }
+
+                case DataEvent.ID_MESSAGE: {
+                    // update host name
+                    setParticipantMap((prev) => {
+                        const idMessage = payload.data as IdMessage;
+                        const participantInfo = prev.get(idMessage.peerId);
+                        if (participantInfo !== undefined) {
+                            return new Map(
+                                prev.set(
+                                    idMessage.peerId,
+                                    { ...participantInfo, name: idMessage.name }
+                                )
+                            );
+                        }
+                        return prev;
+                    });
+                    break;
+                }
+
+                case DataEvent.PARTICIPANT_LIST_MESSAGE: {
+                    const peers = (payload.data as ParticipantListMessage).peers;
+                    const userName = session?.user?.name ?? "Guest";
+
+                    // connect and call every member already in meeting
+                    peers.forEach(member => {
+                        const conn = peer.connect(member.peerId, { metadata: { name: userName } });
+                        onOutgoingConnection(conn);
+                        setParticipantMap((prev) => (
+                            new Map(
+                                prev.set(conn.peer, {
+                                    name: member.name,
+                                    dataConn: conn,
+                                    mediaConn: localStream !== null ? peer.call(member.peerId, localStream) : undefined,
+                                })
+                            )
+                        ));
+                    });
+                    break;
+                }
+
+                default: {
+                    // Do nothing on unknown events
+                    console.error(`Unknown event received: ${JSON.stringify(payload)}`);
+                    break;
+                }
+            }
+        },
+        [localStream, session, handleChatMessages, onOutgoingConnection]
+    );
+
 
     useEffect(
         () => {
-            peer.on('connection', onNewConnection);
+            peer.on('connection', onIncomingConnection);
             console.log("Connection listener set");
 
             // unsubscribe this specific listener
             return () => {
-                peer.off('connection', onNewConnection);
+                peer.off('connection', onIncomingConnection);
                 console.log("Connection listener unsubscribed");
             }
         },
-        [onNewConnection]
+        [onIncomingConnection]
     );
 
     useEffect(
@@ -104,8 +171,30 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 console.log("joining host" + hostId + " with id " + id);
 
                 const hostConn = peer.connect(hostId, { metadata: { name: session?.user?.name ?? "Guest" } });
-                // manual call needed since our connection doesn't trigger event
-                onNewConnection(hostConn);
+                // set specific listeners for hostConn
+
+                hostConn.on("data", handleHostMessages);
+
+                // TODO: Maybe kick out of meeting
+                hostConn.on('close', () => {
+                    // Remove participant from map
+                    //console.log(`Closing data conn ${conn.peer}`);
+                    setParticipantMap((prev) => {
+                        const newMap = new Map(prev);
+                        newMap.delete(hostConn.peer);
+                        return newMap;
+                    });
+                });
+
+                // name of host is initially unknown
+                setParticipantMap((prev) => (
+                    new Map(
+                        prev.set(hostConn.peer, {
+                            name: "Host",
+                            dataConn: hostConn,
+                        })
+                    )
+                ));
 
                 setPeerId(id);
             };
@@ -115,7 +204,7 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 peer.off('open', onPeerOpen);
             }
         },
-        [hostId, session, onNewConnection]
+        [hostId, session, handleHostMessages]
     );
 
     useEffect(

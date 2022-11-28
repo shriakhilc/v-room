@@ -3,7 +3,7 @@ import ParticipantStream from '@/src/components/participant_stream';
 import { Session } from 'next-auth';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
-import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
+import { ChatMessage, DataEvent, DataPayload, IdMessage, ParticipantInfo, ParticipantListMessage } from '../utils/meetings';
 import { trpc } from '../utils/trpc';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
@@ -81,19 +81,6 @@ export default function MeetingHost({ classroomid, session }: MeetingHostProps) 
                         },
                     };
                     conn.send(idPayload);
-
-                    // Auto sending a chat message to every new connection
-                    const chatPayload: DataPayload = {
-                        event: DataEvent.CHAT_MESSAGE,
-                        data: {
-                            senderName: session.user?.name ?? "Meeting Host",
-                            timestamp: Date.now(),
-                            message: "hello!"
-                        },
-                    };
-                    conn.send(chatPayload);
-
-                    setMessages(m => [...m, chatPayload.data as ChatMessage]);
                 });
 
                 conn.on('close', () => {
@@ -133,6 +120,16 @@ export default function MeetingHost({ classroomid, session }: MeetingHostProps) 
                 const peerId = participantInfo.dataConn.peer;
                 console.log(`Calling ${peerId}`);
 
+                // only collect peers in the meeting, not those in waiting room
+                const peers = Array.from(participantMap)
+                    .filter(item => item[1].mediaConn !== undefined)
+                    .map(([peerId, { name }]) => (
+                        {
+                            peerId: peerId,
+                            name: name,
+                        } as IdMessage
+                    ));
+
                 setParticipantMap((prev) => (
                     new Map(
                         prev.set(peerId, {
@@ -141,9 +138,21 @@ export default function MeetingHost({ classroomid, session }: MeetingHostProps) 
                         })
                     )
                 ));
+
+                // transmit if peers list is non-empty
+                if (peers && peers.length) {
+                    participantInfo.dataConn.send(
+                        {
+                            event: DataEvent.PARTICIPANT_LIST_MESSAGE,
+                            data: {
+                                peers: peers,
+                            } as ParticipantListMessage,
+                        } as DataPayload
+                    );
+                }
             }
         },
-        [localStream]
+        [participantMap, localStream]
     );
 
     const sendMessageToAll = useCallback(

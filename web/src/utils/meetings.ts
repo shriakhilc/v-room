@@ -3,11 +3,12 @@ import { DataConnection, MediaConnection } from "peerjs";
 export enum DataEvent {
     CHAT_MESSAGE,
     ID_MESSAGE,
+    PARTICIPANT_LIST_MESSAGE,
 }
 
 export interface DataPayload {
     event: DataEvent,
-    data: ChatMessage | NewJoinMessage,
+    data: ChatMessage | IdMessage | ParticipantListMessage,
 }
 
 export interface ChatMessage {
@@ -16,9 +17,13 @@ export interface ChatMessage {
     message: string,
 }
 
-export interface NewJoinMessage {
+export interface IdMessage {
     peerId: string,
     name: string,
+}
+
+export interface ParticipantListMessage {
+    peers: IdMessage[]
 }
 
 export interface ParticipantInfo {
