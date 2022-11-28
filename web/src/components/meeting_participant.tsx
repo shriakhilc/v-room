@@ -1,8 +1,7 @@
 import LocalStreamManager from '@/src/components/local_stream_manager';
-import { Session } from 'next-auth';
 import Peer, { DataConnection, MediaConnection } from 'peerjs';
-import { useCallback, useEffect, useState } from 'react';
-import { ChatMessage, DataEvent, DataPayload, IdMessage, ParticipantInfo, ParticipantListMessage } from '../utils/meetings';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChatMessage, DataEvent, DataPayload, IdMessage, ParticipantInfo, ParticipantListMessage, QueueUpdateMessage } from '../utils/meetings';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
@@ -12,14 +11,22 @@ const peer = new Peer();
 
 interface MeetingParticipantProps {
     hostId: string,
-    session: Session | null,
+    currUserName: string,
 }
 
-export default function MeetingParticipant({ hostId, session }: MeetingParticipantProps) {
+export default function MeetingParticipant({ hostId, currUserName }: MeetingParticipantProps) {
     const [peerId, setPeerId] = useState('')
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+
     const [participantMap, setParticipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
+    const participantList = useMemo(
+        () => Array.from(participantMap),
+        [participantMap]
+    );
+
+    const [queuePos, setQueuePos] = useState<number>(0);
+    const [queueTotal, setQueueTotal] = useState<number>(0);
 
     const copyInviteLink = useCallback(
         () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostId}`) },
@@ -29,16 +36,8 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
     const handleChatMessages = useCallback(
         (data: unknown) => {
             const payload = data as DataPayload;
-            switch (payload.event) {
-                case DataEvent.CHAT_MESSAGE: {
-                    setMessages(prev => [...prev, payload.data as ChatMessage]);
-                    break;
-                }
-
-                default: {
-                    // Do nothing on unknown events
-                    break;
-                }
+            if (payload.event === DataEvent.CHAT_MESSAGE) {
+                setMessages(prev => [...prev, payload.data as ChatMessage]);
             }
         },
         []
@@ -120,11 +119,10 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
 
                 case DataEvent.PARTICIPANT_LIST_MESSAGE: {
                     const peers = (payload.data as ParticipantListMessage).peers;
-                    const userName = session?.user?.name ?? "Guest";
 
                     // connect and call every member already in meeting
                     peers.forEach(member => {
-                        const conn = peer.connect(member.peerId, { metadata: { name: userName } });
+                        const conn = peer.connect(member.peerId, { metadata: { name: currUserName } });
                         onOutgoingConnection(conn);
                         setParticipantMap((prev) => (
                             new Map(
@@ -139,6 +137,14 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                     break;
                 }
 
+                case DataEvent.QUEUE_UPDATE_MESSAGE: {
+                    const updateMsg = payload.data as QueueUpdateMessage;
+                    console.log(JSON.stringify(updateMsg));
+                    setQueuePos(updateMsg.position);
+                    setQueueTotal(updateMsg.total);
+                    break;
+                }
+
                 default: {
                     // Do nothing on unknown events
                     console.error(`Unknown event received: ${JSON.stringify(payload)}`);
@@ -146,7 +152,7 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 }
             }
         },
-        [localStream, session, handleChatMessages, onOutgoingConnection]
+        [localStream, currUserName, handleChatMessages, onOutgoingConnection]
     );
 
 
@@ -170,7 +176,7 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 console.log("My participant ID is: " + id);
                 console.log("joining host" + hostId + " with id " + id);
 
-                const hostConn = peer.connect(hostId, { metadata: { name: session?.user?.name ?? "Guest" } });
+                const hostConn = peer.connect(hostId, { metadata: { name: currUserName } });
                 // set specific listeners for hostConn
 
                 hostConn.on("data", handleHostMessages);
@@ -204,13 +210,13 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 peer.off('open', onPeerOpen);
             }
         },
-        [hostId, session, handleHostMessages]
+        [hostId, currUserName, handleHostMessages]
     );
 
     useEffect(
         () => {
-            // TODO: Prevent this during waiting room
-            // TODO: Add condition to check against host's peer map while in meeting
+            // By using a private peer server, the risk of auto-accepting unwanted calls is low
+            // but additional checks based on info shared by host can be implemented
             const onCallReceived = (call: MediaConnection) => {
                 // participants will auto-answer any calls they receive
                 call.answer(localStream ?? undefined);
@@ -225,6 +231,8 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                                 mediaConn: call,
                             })
                         );
+                    } else {
+                        console.error(`Call from someone not in map ${call.peer}`);
                     }
                     return prev;
                 });
@@ -253,7 +261,7 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
             const payload: DataPayload = {
                 event: DataEvent.CHAT_MESSAGE,
                 data: {
-                    senderName: session?.user?.name ?? "Guest",
+                    senderName: currUserName,
                     timestamp: Date.now(),
                     message: msg,
                 },
@@ -261,14 +269,13 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
 
             // participant only knows people in meeting, none in waiting room
             // so send to all.
-            participantMap.forEach(({ dataConn, mediaConn }) => {
+            participantList.forEach(([, { dataConn }]) => {
                 dataConn.send(payload);
             });
             setMessages(m => [...m, payload.data as ChatMessage])
         },
-        [participantMap, session]
+        [participantList, currUserName]
     );
-
 
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
@@ -276,7 +283,7 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
                     <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} />
                     {/* <HostStream peer={peer} peerid={hostId} localStream={localStream} /> */}
-                    {Array.from(participantMap, ([peerId, { mediaConn }]) => (
+                    {participantList.map(([peerId, { mediaConn }]) => (
                         (mediaConn !== undefined) &&
                         <ParticipantStream key={peerId} call={mediaConn} />
                     ))}
@@ -288,10 +295,14 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
                 {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
                 <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
-                    <p className='text-lg font-semibold'>Participants ({participantMap.size})</p>
+                    {queuePos === -1 ?
+                        (<p className='text-lg font-semibold'>Participants ({participantList.length} in meeting, {queueTotal} waiting)</p>)
+                        :
+                        (<p className='text-lg font-semibold'>Participants (# {queuePos + 1} of {queueTotal} waiting)</p>)
+                    }
 
                     <div className='flex flex-col grow overflow-y-auto'>
-                        {Array.from(participantMap, ([peerId, participantInfo]) => (
+                        {participantList.map(([peerId, participantInfo]) => (
                             <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => { return; }} host={false}></ParticipantDisplay>
                         ))}
                     </div>

@@ -23,7 +23,7 @@ const HostMeeting: NextPage = () => {
             </Head>
             {isReady && typeof query.classroomid === "string"
                 && sessionStatus === "authenticated" &&
-                <MeetingHost classroomid={query.classroomid} session={session} />}
+                <MeetingHost classroomid={query.classroomid} currUserName={session.user?.name ?? "Meeting Host"} />}
         </>
     )
 };

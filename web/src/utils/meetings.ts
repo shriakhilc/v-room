@@ -4,11 +4,12 @@ export enum DataEvent {
     CHAT_MESSAGE,
     ID_MESSAGE,
     PARTICIPANT_LIST_MESSAGE,
+    QUEUE_UPDATE_MESSAGE
 }
 
 export interface DataPayload {
     event: DataEvent,
-    data: ChatMessage | IdMessage | ParticipantListMessage,
+    data: ChatMessage | IdMessage | ParticipantListMessage | QueueUpdateMessage,
 }
 
 export interface ChatMessage {
@@ -24,6 +25,11 @@ export interface IdMessage {
 
 export interface ParticipantListMessage {
     peers: IdMessage[]
+}
+
+export interface QueueUpdateMessage {
+    position: number,
+    total: number,
 }
 
 export interface ParticipantInfo {

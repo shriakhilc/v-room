@@ -8,6 +8,8 @@ const MeetingParticipant = dynamic(() => import('@/components/meeting_participan
     ssr: false,
 })
 
+const anonName = `Guest ${Math.floor(Math.random() * 1000) + 1}`;
+
 const JoinMeeting: NextPage = () => {
 
     const { status: sessionStatus, data: session } = useSession();
@@ -21,12 +23,9 @@ const JoinMeeting: NextPage = () => {
                 <meta name="description" content="In room" />
                 <link rel="icon" href="/favicon.svg" />
             </Head>
-            {/* {isReady && typeof query.hostId === "string"
-                && sessionStatus === "authenticated" &&
-                <MeetingParticipant hostid={query.hostId} session={session} />} */}
 
             {isReady && typeof query.hostId === "string" &&
-                <MeetingParticipant hostId={query.hostId} session={session} />}
+                <MeetingParticipant hostId={query.hostId} currUserName={session?.user?.name ?? anonName} />}
         </>
     )
 }
