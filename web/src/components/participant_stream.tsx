@@ -1,4 +1,4 @@
-import Peer, { MediaConnection } from 'peerjs';
+import { MediaConnection } from 'peerjs';
 import { useEffect, useRef, useState } from 'react';
 
 interface ParticipantStreamProps {
@@ -22,10 +22,13 @@ export default function ParticipantStream({ call }: ParticipantStreamProps) {
             const onCallStream = (remoteStream: MediaStream | null) => {
                 if (remoteStreamView?.current !== null) {
                     remoteStreamView.current.srcObject = remoteStream;
+                    console.log("displaying participant stream");
                 }
                 setParticipantStream(remoteStream);
+                console.log("set stream state");
             };
             call.on('stream', onCallStream);
+            console.log("set onCall listener");
             // unsubscribe this specific listener
             return () => {
                 call.off('stream', onCallStream);
@@ -62,7 +65,7 @@ export default function ParticipantStream({ call }: ParticipantStreamProps) {
 
     return (
         <>
-            <div className="bg-black">
+            <div className="">
                 <video className="card w-[480px]" ref={remoteStreamView} autoPlay playsInline></video>
                 <div className="button-group">
                     <button className={remoteAudio ? "btn btn-success" : "btn btn-error"} onClick={() => toggleRemoteAudio(participantStream)}>Toggle Sound</button>

@@ -1,11 +1,12 @@
-import HostStream from '@/src/components/host_stream';
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import { Session } from 'next-auth';
-import Peer, { DataConnection } from 'peerjs';
+import Peer, { DataConnection, MediaConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
+import ParticipantDisplay from './ParticipantDisplay';
+import ParticipantStream from './participant_stream';
 
 const peer = new Peer();
 
@@ -117,6 +118,37 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
         [hostId, session, onNewConnection]
     );
 
+    useEffect(
+        () => {
+            // TODO: Prevent this during waiting room
+            // TODO: Add condition to check against host's peer map while in meeting
+            const onCallReceived = (call: MediaConnection) => {
+                // participants will auto-answer any calls they receive
+                call.answer(localStream ?? undefined);
+
+                setParticipantMap((prev) => {
+                    const participantInfo = prev.get(call.peer);
+                    // if peer is a known connection 
+                    if (participantInfo !== undefined) {
+                        return new Map(
+                            prev.set(call.peer, {
+                                ...participantInfo,
+                                mediaConn: call,
+                            })
+                        );
+                    }
+                    return prev;
+                });
+            }
+            peer.on('call', onCallReceived);
+            // unsubscribe this specific listener
+            return () => {
+                peer.off('call', onCallReceived);
+            }
+        },
+        [localStream]
+    );
+
     // const closeHostConn = useCallback(
     //     () => {
     //         if (hostConn !== undefined) {
@@ -149,15 +181,16 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
     );
 
 
-
-
-
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
                     <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} />
-                    <HostStream peer={peer} peerid={hostId} localStream={localStream} />
+                    {/* <HostStream peer={peer} peerid={hostId} localStream={localStream} /> */}
+                    {Array.from(participantMap, ([peerId, { mediaConn }]) => (
+                        (mediaConn !== undefined) &&
+                        <ParticipantStream key={peerId} call={mediaConn} />
+                    ))}
                 </div>
 
                 <div id="bottom_controls" className='shrink-0 basis-1/6'></div>
@@ -166,15 +199,15 @@ export default function MeetingParticipant({ hostId, session }: MeetingParticipa
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
                 {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
                 <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
-                    {/* <p className='text-lg font-semibold'>Participants ({participantMap.size})</p>
+                    <p className='text-lg font-semibold'>Participants ({participantMap.size})</p>
 
                     <div className='flex flex-col grow overflow-y-auto'>
                         {Array.from(participantMap, ([peerId, participantInfo]) => (
-                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)}></ParticipantDisplay>
+                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => { return; }} host={false}></ParticipantDisplay>
                         ))}
-                    </div> */}
+                    </div>
 
-                    <p>Participant ID: {peerId}</p>
+                    {/* <p>Participant ID: {peerId}</p> */}
                     <button onClick={copyInviteLink}
                         className="btn normal-case p-1 bg-transparent border border-white hover:border-white border-solid hover:bg-gray-700"
                     >

@@ -189,7 +189,7 @@ export default function MeetingHost({ classroomid, session }: MeetingHostProps) 
 
                     <div className='flex flex-col grow overflow-y-auto'>
                         {Array.from(participantMap, ([peerId, participantInfo]) => (
-                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)}></ParticipantDisplay>
+                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)} host={true}></ParticipantDisplay>
                         ))}
                     </div>
 

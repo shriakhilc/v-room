@@ -52,7 +52,7 @@ export default function HostStream(props: { peer: Peer; peerid: string; localStr
 
     return (
         <div>
-            <div className="bg-black">
+            <div className="">
                 <video className="card w-[480px]" ref={remoteStreamView} autoPlay playsInline></video>
                 <div className="button-group">
                     <button className={remoteAudio ? "btn btn-success" : "btn btn-error"} onClick={() => toggleRemoteAudio(hostStream)}>Toggle Sound</button>
