@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from 'next/router';
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 import { trpc } from '@/src/utils/trpc';
 
@@ -11,7 +11,7 @@ import ClassroomSettingsDropdown from "@/src/components/classroomSettingsDropdow
 import Footer from "@/src/components/footer";
 import Header from "@/src/components/header";
 import UserTable from "@/src/components/userTable";
-import { Prisma, UserRole } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 
 const ClassroomDetail: NextPage = () => {
   const router = useRouter();
@@ -235,7 +235,7 @@ const ClassroomDetail: NextPage = () => {
 
             {/* TODO: better way to join and host meetings */}
             <div className="flex flex-row items-center justify-between">
-              <div>
+              <div className="flex flex-col">
                 {
                   (currentUserRole == UserRole.INSTRUCTOR || currentUserRole == UserRole.ASSISTANT) && (
                     <Link className="btn" href={`/meeting/host?classroomid=${classroom.id}`}>Host a meeting</Link>
@@ -243,14 +243,14 @@ const ClassroomDetail: NextPage = () => {
                 }
                 {/* display list if not undefined or empty */}
                 {meetings?.at(0) ?
-                  <Link className="btn" href={`/meeting/${meetings[0]}`}>Join a meeting</Link>
+                  <Link className="btn" href={`/meeting/${meetings[0]}`}>Join ongoing meeting</Link>
                   : <p>No meetings</p>
                 }
-                </div>
-              <div>
-                <button onClick={() => {router.push('/classroom/' + classroom.id + "/questions")}} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">View questions {'>>'}</button>
               </div>
-            </div> 
+              <div>
+                <button onClick={() => { router.push('/classroom/' + classroom.id + "/questions") }} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">View questions {'>>'}</button>
+              </div>
+            </div>
           </section >
         </main >
 

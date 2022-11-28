@@ -1,5 +1,6 @@
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
+import { useRouter } from 'next/router';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChatMessage, DataEvent, DataPayload, IdMessage, ParticipantInfo, ParticipantListMessage, QueueUpdateMessage } from '../utils/meetings';
@@ -16,6 +17,7 @@ interface MeetingHostProps {
 const peer = new Peer();
 
 export default function MeetingHost({ classroomid, currUserName }: MeetingHostProps) {
+    const router = useRouter();
     const [hostId, setHostId] = useState('')
     // Maintains order of insertion by default
     const [participantMap, setParticipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
@@ -23,6 +25,7 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
     const addMeetingToClassroom = trpc.useMutation('meeting.addToClassroom');
+    const clearMeeting = trpc.useMutation('meeting.removeFromClassroom');
 
     const meetingList = useMemo(
         () => Array.from(participantMap).filter(([, { mediaConn }]) => mediaConn !== undefined),
@@ -47,6 +50,17 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
             setHostId(id);
         },
         [addMeetingToClassroom, classroomid]
+    );
+
+    // remove meeting from db when tab/window closed to end meeting
+    const endMeeting = useCallback(
+        () => {
+            clearMeeting.mutate({ classroomId: classroomid });
+            peer.destroy();
+            // return to classroom page
+            router.replace(`/classroom/${classroomid}`);
+        },
+        [clearMeeting, classroomid, router]
     );
 
     useEffect(
@@ -238,7 +252,11 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
                     ))}
                 </div>
 
-                <div id="bottom_controls" className='shrink-0 basis-1/6'></div>
+                <div id="bottom_controls" className='shrink-0 pb-2 btn-group btn-group-horizontal justify-end'>
+                    <button className="btn btn-error" onClick={endMeeting}>
+                        End Meeting
+                    </button>
+                </div>
             </div>
 
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
