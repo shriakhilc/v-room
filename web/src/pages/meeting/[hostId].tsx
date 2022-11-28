@@ -14,7 +14,7 @@ const JoinMeeting: NextPage = () => {
 
     const { status: sessionStatus, data: session } = useSession();
 
-    const { isReady, query } = useRouter();
+    const { isReady, query, replace } = useRouter();
 
     return (
         <>
@@ -25,7 +25,7 @@ const JoinMeeting: NextPage = () => {
             </Head>
 
             {isReady && typeof query.hostId === "string" &&
-                <MeetingParticipant hostId={query.hostId} currUserName={session?.user?.name ?? anonName} />}
+                <MeetingParticipant hostId={query.hostId} currUserName={session?.user?.name ?? anonName} redirectFn={replace} />}
         </>
     )
 }

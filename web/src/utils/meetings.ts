@@ -4,12 +4,14 @@ export enum DataEvent {
     CHAT_MESSAGE,
     ID_MESSAGE,
     PARTICIPANT_LIST_MESSAGE,
-    QUEUE_UPDATE_MESSAGE
+    QUEUE_UPDATE_MESSAGE,
+    KICK_MESSAGE,
+    MUTE_MESSAGE,
 }
 
 export interface DataPayload {
     event: DataEvent,
-    data: ChatMessage | IdMessage | ParticipantListMessage | QueueUpdateMessage,
+    data?: ChatMessage | IdMessage | ParticipantListMessage | QueueUpdateMessage,
 }
 
 export interface ChatMessage {

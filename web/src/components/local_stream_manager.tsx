@@ -16,8 +16,6 @@ export default function LocalStreamManager(props: LocalStreamManagerProps) {
 
     const localStreamView = useRef<HTMLVideoElement | null>(null);
 
-
-
     const toggleLocalAudio = useCallback(
         (stream: MediaStream | null, enabled?: boolean) => {
             let current = localAudio
@@ -85,7 +83,7 @@ export default function LocalStreamManager(props: LocalStreamManagerProps) {
     };
 
     return (
-        <div className="bg-black">
+        <div className="">
             {/* TODO: Better way than fixed width? */}
             <video className="card w-[480px]" ref={localStreamView} autoPlay playsInline muted></video>
             <div className="btn-group btn-group-horizontal">

@@ -216,14 +216,25 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
         [meetingList, waitingList]
     );
 
+    const kickUser = useCallback(
+        (targetDataConn: DataConnection) => {
+            targetDataConn.send(
+                {
+                    event: DataEvent.KICK_MESSAGE,
+                } as DataPayload
+            );
+        },
+        []
+    );
+
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
                     <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={classroomid} peerid={hostId} />
-                    {meetingList.map(([peerId, { mediaConn }]) => (
+                    {meetingList.map(([peerId, { dataConn, mediaConn }]) => (
                         (mediaConn !== undefined) &&
-                        <ParticipantStream key={peerId} call={mediaConn} />
+                        <ParticipantStream key={peerId} call={mediaConn} isHost={true} onKick={() => kickUser(dataConn)} />
                     ))}
                 </div>
 
@@ -237,7 +248,7 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
 
                     <div className='flex flex-col grow overflow-y-auto'>
                         {meetingList.concat(waitingList).map(([peerId, participantInfo]) => (
-                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)} host={true}></ParticipantDisplay>
+                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)} isHost={true}></ParticipantDisplay>
                         ))}
                     </div>
 

@@ -12,9 +12,10 @@ const peer = new Peer();
 interface MeetingParticipantProps {
     hostId: string,
     currUserName: string,
+    redirectFn: (url: string) => void,
 }
 
-export default function MeetingParticipant({ hostId, currUserName }: MeetingParticipantProps) {
+export default function MeetingParticipant({ hostId, currUserName, redirectFn }: MeetingParticipantProps) {
     const [peerId, setPeerId] = useState('')
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -145,6 +146,20 @@ export default function MeetingParticipant({ hostId, currUserName }: MeetingPart
                     break;
                 }
 
+                case DataEvent.KICK_MESSAGE: {
+                    peer.destroy();
+                    redirectFn('/');
+                    break;
+                }
+
+                case DataEvent.MUTE_MESSAGE: {
+                    const updateMsg = payload.data as QueueUpdateMessage;
+                    console.log(JSON.stringify(updateMsg));
+                    setQueuePos(updateMsg.position);
+                    setQueueTotal(updateMsg.total);
+                    break;
+                }
+
                 default: {
                     // Do nothing on unknown events
                     console.error(`Unknown event received: ${JSON.stringify(payload)}`);
@@ -152,7 +167,7 @@ export default function MeetingParticipant({ hostId, currUserName }: MeetingPart
                 }
             }
         },
-        [localStream, currUserName, handleChatMessages, onOutgoingConnection]
+        [localStream, currUserName, handleChatMessages, onOutgoingConnection, redirectFn]
     );
 
 
@@ -285,11 +300,12 @@ export default function MeetingParticipant({ hostId, currUserName }: MeetingPart
                     {/* <HostStream peer={peer} peerid={hostId} localStream={localStream} /> */}
                     {participantList.map(([peerId, { mediaConn }]) => (
                         (mediaConn !== undefined) &&
-                        <ParticipantStream key={peerId} call={mediaConn} />
+                        <ParticipantStream key={peerId} call={mediaConn} isHost={false} />
                     ))}
                 </div>
 
-                <div id="bottom_controls" className='shrink-0 basis-1/6'></div>
+                <div id="bottom_controls" className='shrink-0 basis-1/6'>
+                </div>
             </div>
 
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
@@ -303,7 +319,7 @@ export default function MeetingParticipant({ hostId, currUserName }: MeetingPart
 
                     <div className='flex flex-col grow overflow-y-auto'>
                         {participantList.map(([peerId, participantInfo]) => (
-                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => { return; }} host={false}></ParticipantDisplay>
+                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => { return; }} isHost={false}></ParticipantDisplay>
                         ))}
                     </div>
 
