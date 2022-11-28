@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import dynamic from 'next/dynamic'
 import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
 
 const MeetingHost = dynamic(() => import('@/components/meeting_host'), {
     ssr: false,
@@ -9,7 +10,7 @@ const MeetingHost = dynamic(() => import('@/components/meeting_host'), {
 
 const HostMeeting: NextPage = () => {
 
-    // TODO: Add session
+    const { status: sessionStatus, data: session } = useSession();
 
     const { isReady, query } = useRouter();
 
@@ -20,7 +21,9 @@ const HostMeeting: NextPage = () => {
                 <meta name="description" content="Hosting room" />
                 <link rel="icon" href="/favicon.svg" />
             </Head>
-            {isReady && typeof query.classroomid === "string" && <MeetingHost classroomid={query.classroomid} />}
+            {isReady && typeof query.classroomid === "string"
+                && sessionStatus === "authenticated" &&
+                <MeetingHost classroomid={query.classroomid} currUserName={session.user?.name ?? "Meeting Host"} />}
         </>
     )
 };

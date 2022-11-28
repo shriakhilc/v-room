@@ -1,23 +1,38 @@
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
 import Peer, { DataConnection } from 'peerjs';
-import { useCallback, useEffect, useState } from 'react';
-import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChatMessage, DataEvent, DataPayload, IdMessage, ParticipantInfo, ParticipantListMessage, QueueUpdateMessage } from '../utils/meetings';
 import { trpc } from '../utils/trpc';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
 
+interface MeetingHostProps {
+    classroomid: string,
+    currUserName: string,
+}
+
 const peer = new Peer();
 
-export default function MeetingHost(props: { classroomid: string; }) {
+export default function MeetingHost({ classroomid, currUserName }: MeetingHostProps) {
     const [hostId, setHostId] = useState('')
     // Maintains order of insertion by default
-    const [participantMap, setPartipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
+    const [participantMap, setParticipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
     const addMeetingToClassroom = trpc.useMutation('meeting.addToClassroom');
+
+    const meetingList = useMemo(
+        () => Array.from(participantMap).filter(([, { mediaConn }]) => mediaConn !== undefined),
+        [participantMap]
+    );
+
+    const waitingList = useMemo(
+        () => Array.from(participantMap).filter(([, { mediaConn }]) => mediaConn === undefined),
+        [participantMap]
+    );
 
     const copyInviteLink = useCallback(
         () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostId}`) },
@@ -27,10 +42,11 @@ export default function MeetingHost(props: { classroomid: string; }) {
     const onPeerOpen = useCallback(
         (id: string) => {
             console.log("My peer ID is: " + id);
-            addMeetingToClassroom.mutate({ classroomId: props.classroomid, meetingId: id });
+            addMeetingToClassroom.mutate({ classroomId: classroomid, meetingId: id });
+            // TODO: Handle adding self to participants
             setHostId(id);
         },
-        [addMeetingToClassroom, props]
+        [addMeetingToClassroom, classroomid]
     );
 
     useEffect(
@@ -52,52 +68,50 @@ export default function MeetingHost(props: { classroomid: string; }) {
                     const payload = data as DataPayload;
                     switch (payload.event) {
                         case DataEvent.CHAT_MESSAGE: {
-                            setMessages(prev => [...prev, payload.data]);
+                            setMessages(prev => [...prev, payload.data as ChatMessage]);
                             break;
                         }
 
                         default: {
                             // Do nothing on unknown events
-                            console.error(`Unknown event received: ${data}`);
+                            console.error(`Unknown event received: ${JSON.stringify(data)}`);
                             break;
                         }
                     }
                 });
 
                 conn.on("open", () => {
-                    // Auto sending a message to every new connection
-                    const payload: DataPayload = {
-                        event: DataEvent.CHAT_MESSAGE,
+                    // Send self ID information to every new connection
+                    const idPayload: DataPayload = {
+                        event: DataEvent.ID_MESSAGE,
                         data: {
-                            senderName: "Meeting Host",
-                            timestamp: Date.now(),
-                            message: "hello!"
+                            peerId: hostId,
+                            name: currUserName
                         },
                     };
+                    conn.send(idPayload);
 
-                    conn.send(payload);
-                    setMessages(m => [...m, payload.data]);
+                    // Creates new shallow Map using prev map + new conn
+                    // this is done after conn opens to correctly trigger update messages
+                    setParticipantMap((prev) => (
+                        new Map(
+                            prev.set(conn.peer, {
+                                name: conn.metadata.name,
+                                dataConn: conn,
+                            })
+                        )
+                    ));
                 });
 
                 conn.on('close', () => {
                     // Remove participant from map
                     console.log(`Closing data conn ${conn.peer}`);
-                    setPartipantMap((prev) => {
+                    setParticipantMap((prev) => {
                         const newMap = new Map(prev);
                         newMap.delete(conn.peer);
                         return newMap;
                     });
-                })
-
-                // Creates new shallow Map using prev map + new conn
-                setPartipantMap((prev) => (
-                    new Map(
-                        prev.set(conn.peer, {
-                            name: conn.metadata.name,
-                            dataConn: conn,
-                        })
-                    )
-                ));
+                });
             };
 
             peer.on('connection', onNewConnection);
@@ -107,7 +121,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 peer.off('connection', onNewConnection);
             }
         },
-        []
+        [currUserName, hostId]
     );
 
     const callParticipant = useCallback(
@@ -116,7 +130,15 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 const peerId = participantInfo.dataConn.peer;
                 console.log(`Calling ${peerId}`);
 
-                setPartipantMap((prev) => (
+                // only collect peers in the meeting, not those in waiting room
+                const peers = meetingList.map(([peerId, { name }]) => (
+                    {
+                        peerId: peerId,
+                        name: name,
+                    } as IdMessage
+                ));
+
+                setParticipantMap((prev) => (
                     new Map(
                         prev.set(peerId, {
                             ...participantInfo,
@@ -124,43 +146,95 @@ export default function MeetingHost(props: { classroomid: string; }) {
                         })
                     )
                 ));
+
+                // transmit if peers list is non-empty
+                if (peers && peers.length) {
+                    participantInfo.dataConn.send(
+                        {
+                            event: DataEvent.PARTICIPANT_LIST_MESSAGE,
+                            data: {
+                                peers: peers,
+                            } as ParticipantListMessage,
+                        } as DataPayload
+                    );
+                }
             }
         },
-        [localStream]
+        [meetingList, localStream]
     );
 
     const sendMessageToAll = useCallback(
         (msg: string) => {
-            // TODO: Get user's name here
             const payload: DataPayload = {
                 event: DataEvent.CHAT_MESSAGE,
                 data: {
-                    senderName: "Meeting Host",
+                    senderName: currUserName,
                     timestamp: Date.now(),
                     message: msg,
                 },
             };
 
             // Sending to only those who joined the meeting, not those in waiting room
-            participantMap.forEach(({ dataConn, mediaConn }) => {
-                if (mediaConn !== undefined) {
-                    dataConn.send(payload);
-                }
+            meetingList.forEach(([peerId, { dataConn }]) => {
+                dataConn.send(payload);
             });
-            setMessages(m => [...m, payload.data])
+            setMessages(m => [...m, payload.data as ChatMessage])
         },
-        [participantMap]
+        [meetingList, currUserName]
     );
 
+    useEffect(
+        () => {
+            // send out messages to every participant on every update
+            let pos = 0;
+            for (const [, peerInfo] of waitingList) {
+                const data = {
+                    position: pos++,
+                    total: waitingList.length,
+                } as QueueUpdateMessage;
+
+                peerInfo.dataConn.send({
+                    event: DataEvent.QUEUE_UPDATE_MESSAGE,
+                    data: data,
+                } as DataPayload);
+            }
+
+            // Can skip sending this to those inside meeting if they
+            // no longer care about the waiting room numbers.
+            for (const [, peerInfo] of meetingList) {
+                const data = {
+                    position: -1,
+                    total: waitingList.length,
+                } as QueueUpdateMessage;
+
+                peerInfo.dataConn.send({
+                    event: DataEvent.QUEUE_UPDATE_MESSAGE,
+                    data: data,
+                } as DataPayload);
+            }
+        },
+        [meetingList, waitingList]
+    );
+
+    const kickUser = useCallback(
+        (targetDataConn: DataConnection) => {
+            targetDataConn.send(
+                {
+                    event: DataEvent.KICK_MESSAGE,
+                } as DataPayload
+            );
+        },
+        []
+    );
 
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={hostId} />
-                    {Array.from(participantMap, ([peerId, { mediaConn }]) => (
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={classroomid} peerid={hostId} />
+                    {meetingList.map(([peerId, { dataConn, mediaConn }]) => (
                         (mediaConn !== undefined) &&
-                        <ParticipantStream key={peerId} peer={peer} peerid={peerId} localStream={localStream} call={mediaConn} />
+                        <ParticipantStream key={peerId} call={mediaConn} isHost={true} onKick={() => kickUser(dataConn)} />
                     ))}
                 </div>
 
@@ -170,11 +244,11 @@ export default function MeetingHost(props: { classroomid: string; }) {
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
                 {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
                 <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
-                    <p className='text-lg font-semibold'>Participants ({participantMap.size})</p>
+                    <p className='text-lg font-semibold'>Participants ({meetingList.length} in meeting, {waitingList.length} waiting)</p>
 
                     <div className='flex flex-col grow overflow-y-auto'>
-                        {Array.from(participantMap, ([peerId, participantInfo]) => (
-                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)}></ParticipantDisplay>
+                        {meetingList.concat(waitingList).map(([peerId, participantInfo]) => (
+                            <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)} isHost={true}></ParticipantDisplay>
                         ))}
                     </div>
 

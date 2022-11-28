@@ -3,16 +3,17 @@ import { ParticipantInfo } from "../utils/meetings";
 interface ParticipantDisplayProps {
     info: ParticipantInfo,
     answerCall: () => void,
+    isHost: boolean,
 }
 
 export default function ParticipantDisplay(
-    { info, answerCall }: ParticipantDisplayProps
+    { info, answerCall, isHost }: ParticipantDisplayProps
 ) {
     return (
         <div className='flex flex-row justify-between'>
             <div>{info.name}</div>
-            {/* Only showing button if peer not already in meeting */}
-            {info.mediaConn === undefined && (
+            {/* Only showing button if host and peer not already in meeting */}
+            {isHost && info.mediaConn === undefined && (
                 <button onClick={answerCall}
                     className="normal-case p-1 bg-transparent hover:bg-gray-700"
                 >
