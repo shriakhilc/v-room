@@ -196,15 +196,10 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
 
                 hostConn.on("data", handleHostMessages);
 
-                // TODO: Maybe kick out of meeting
+                // kick everyone out of meeting if host leaves
                 hostConn.on('close', () => {
-                    // Remove participant from map
-                    //console.log(`Closing data conn ${conn.peer}`);
-                    setParticipantMap((prev) => {
-                        const newMap = new Map(prev);
-                        newMap.delete(hostConn.peer);
-                        return newMap;
-                    });
+                    peer.destroy();
+                    redirectFn(`/`);
                 });
 
                 // name of host is initially unknown
@@ -261,16 +256,6 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
         [localStream]
     );
 
-    // const closeHostConn = useCallback(
-    //     () => {
-    //         if (hostConn !== undefined) {
-    //             console.log(`Closing connection with host ${hostConn.peer}`);
-    //             hostConn.close();
-    //         }
-    //     },
-    //     [hostConn]
-    // );
-
     const sendMessageToAll = useCallback(
         (msg: string) => {
             const payload: DataPayload = {
@@ -302,9 +287,6 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                         (mediaConn !== undefined) &&
                         <ParticipantStream key={peerId} call={mediaConn} isHost={false} />
                     ))}
-                </div>
-
-                <div id="bottom_controls" className='shrink-0 basis-1/6'>
                 </div>
             </div>
 
