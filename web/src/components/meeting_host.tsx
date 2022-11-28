@@ -1,5 +1,6 @@
 import LocalStreamManager from '@/src/components/local_stream_manager';
 import ParticipantStream from '@/src/components/participant_stream';
+import { Session } from 'next-auth';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
@@ -8,12 +9,17 @@ import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 import ParticipantDisplay from './ParticipantDisplay';
 
+interface MeetingHostProps {
+    classroomid: string,
+    session: Session,
+}
+
 const peer = new Peer();
 
-export default function MeetingHost(props: { classroomid: string; }) {
+export default function MeetingHost({ classroomid, session }: MeetingHostProps) {
     const [hostId, setHostId] = useState('')
     // Maintains order of insertion by default
-    const [participantMap, setPartipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
+    const [participantMap, setParticipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -27,10 +33,11 @@ export default function MeetingHost(props: { classroomid: string; }) {
     const onPeerOpen = useCallback(
         (id: string) => {
             console.log("My peer ID is: " + id);
-            addMeetingToClassroom.mutate({ classroomId: props.classroomid, meetingId: id });
+            addMeetingToClassroom.mutate({ classroomId: classroomid, meetingId: id });
+            // TODO: Handle adding self to participants
             setHostId(id);
         },
-        [addMeetingToClassroom, props]
+        [addMeetingToClassroom, classroomid]
     );
 
     useEffect(
@@ -52,37 +59,47 @@ export default function MeetingHost(props: { classroomid: string; }) {
                     const payload = data as DataPayload;
                     switch (payload.event) {
                         case DataEvent.CHAT_MESSAGE: {
-                            setMessages(prev => [...prev, payload.data]);
+                            setMessages(prev => [...prev, payload.data as ChatMessage]);
                             break;
                         }
 
                         default: {
                             // Do nothing on unknown events
-                            console.error(`Unknown event received: ${data}`);
+                            console.error(`Unknown event received: ${JSON.stringify(data)}`);
                             break;
                         }
                     }
                 });
 
                 conn.on("open", () => {
-                    // Auto sending a message to every new connection
-                    const payload: DataPayload = {
+                    // Send self ID information to every new connection
+                    const idPayload: DataPayload = {
+                        event: DataEvent.ID_MESSAGE,
+                        data: {
+                            peerId: hostId,
+                            name: session.user?.name ?? "Meeting Host"
+                        },
+                    };
+                    conn.send(idPayload);
+
+                    // Auto sending a chat message to every new connection
+                    const chatPayload: DataPayload = {
                         event: DataEvent.CHAT_MESSAGE,
                         data: {
-                            senderName: "Meeting Host",
+                            senderName: session.user?.name ?? "Meeting Host",
                             timestamp: Date.now(),
                             message: "hello!"
                         },
                     };
+                    conn.send(chatPayload);
 
-                    conn.send(payload);
-                    setMessages(m => [...m, payload.data]);
+                    setMessages(m => [...m, chatPayload.data as ChatMessage]);
                 });
 
                 conn.on('close', () => {
                     // Remove participant from map
                     console.log(`Closing data conn ${conn.peer}`);
-                    setPartipantMap((prev) => {
+                    setParticipantMap((prev) => {
                         const newMap = new Map(prev);
                         newMap.delete(conn.peer);
                         return newMap;
@@ -90,7 +107,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 })
 
                 // Creates new shallow Map using prev map + new conn
-                setPartipantMap((prev) => (
+                setParticipantMap((prev) => (
                     new Map(
                         prev.set(conn.peer, {
                             name: conn.metadata.name,
@@ -107,7 +124,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 peer.off('connection', onNewConnection);
             }
         },
-        []
+        [session, hostId]
     );
 
     const callParticipant = useCallback(
@@ -116,7 +133,7 @@ export default function MeetingHost(props: { classroomid: string; }) {
                 const peerId = participantInfo.dataConn.peer;
                 console.log(`Calling ${peerId}`);
 
-                setPartipantMap((prev) => (
+                setParticipantMap((prev) => (
                     new Map(
                         prev.set(peerId, {
                             ...participantInfo,
@@ -131,11 +148,10 @@ export default function MeetingHost(props: { classroomid: string; }) {
 
     const sendMessageToAll = useCallback(
         (msg: string) => {
-            // TODO: Get user's name here
             const payload: DataPayload = {
                 event: DataEvent.CHAT_MESSAGE,
                 data: {
-                    senderName: "Meeting Host",
+                    senderName: session.user?.name ?? "Meeting Host",
                     timestamp: Date.now(),
                     message: msg,
                 },
@@ -147,20 +163,19 @@ export default function MeetingHost(props: { classroomid: string; }) {
                     dataConn.send(payload);
                 }
             });
-            setMessages(m => [...m, payload.data])
+            setMessages(m => [...m, payload.data as ChatMessage])
         },
-        [participantMap]
+        [participantMap, session]
     );
-
 
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={props.classroomid} peerid={hostId} />
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={classroomid} peerid={hostId} />
                     {Array.from(participantMap, ([peerId, { mediaConn }]) => (
                         (mediaConn !== undefined) &&
-                        <ParticipantStream key={peerId} peer={peer} peerid={peerId} localStream={localStream} call={mediaConn} />
+                        <ParticipantStream key={peerId} call={mediaConn} />
                     ))}
                 </div>
 

@@ -2,11 +2,12 @@ import { DataConnection, MediaConnection } from "peerjs";
 
 export enum DataEvent {
     CHAT_MESSAGE,
+    ID_MESSAGE,
 }
 
 export interface DataPayload {
     event: DataEvent,
-    data: ChatMessage,
+    data: ChatMessage | NewJoinMessage,
 }
 
 export interface ChatMessage {
@@ -15,8 +16,53 @@ export interface ChatMessage {
     message: string,
 }
 
+export interface NewJoinMessage {
+    peerId: string,
+    name: string,
+}
+
 export interface ParticipantInfo {
     name: string,
     dataConn: DataConnection,
     mediaConn?: MediaConnection,
 }
+
+/**
+ * Abstract Class
+ *
+ * @class DataMessage
+ */
+// export class DataMessage {
+
+//     constructor() {
+//         if (this.constructor == DataMessage) {
+//             throw new Error("Abstract classes can't be instantiated.");
+//         }
+//     }
+
+// }
+
+// export class ChatMessage extends DataMessage {
+//     name: string;
+//     timestamp: number;
+//     message: string;
+
+//     constructor(name: string, timestamp: number, message: string) {
+//         super();
+//         this.name = name;
+//         this.timestamp = timestamp;
+//         this.message = message;
+//     }
+
+// }
+
+// export class NewJoinMessage extends DataMessage {
+//     peerId: string;
+//     name: string;
+
+//     constructor(peerId: string, name: string) {
+//         super();
+//         this.peerId = peerId;
+//         this.name = name;
+//     }
+// }

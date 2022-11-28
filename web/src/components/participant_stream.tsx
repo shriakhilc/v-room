@@ -1,12 +1,15 @@
 import Peer, { MediaConnection } from 'peerjs';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-export default function ParticipantStream(props: {
-    call: MediaConnection | undefined;
-    peer: Peer;
-    peerid: string | undefined;
-    localStream: MediaStream | null;
-}) {
+interface ParticipantStreamProps {
+    call: MediaConnection,
+    // peer: Peer,
+    // peerid: string | undefined,
+    // localStream: MediaStream | null
+}
+
+export default function ParticipantStream({ call }: ParticipantStreamProps) {
+    // TODO: See if can be deleted
     const [participantStream, setParticipantStream] = useState<MediaStream | null>(null);
 
     const [remoteAudio, setRemoteAudio] = useState(true);
@@ -14,18 +17,22 @@ export default function ParticipantStream(props: {
 
     const remoteStreamView = useRef<HTMLVideoElement | null>(null);
 
-    if (props.peerid !== undefined && props.localStream !== null) {
-        if (props.call !== undefined) {
-            props.call.on("stream", (remoteStream: MediaStream | null) => {
-                if (remoteStreamView?.current !== null && remoteStream !== null) {
+    useEffect(
+        () => {
+            const onCallStream = (remoteStream: MediaStream | null) => {
+                if (remoteStreamView?.current !== null) {
                     remoteStreamView.current.srcObject = remoteStream;
-                    console.log("displaying participant stream")
                 }
                 setParticipantStream(remoteStream);
-                console.log("set participant stream")
-            });
-        }
-    }
+            };
+            call.on('stream', onCallStream);
+            // unsubscribe this specific listener
+            return () => {
+                call.off('stream', onCallStream);
+            }
+        },
+        [call, remoteStreamView]
+    );
 
     function toggleRemoteAudio(stream: MediaStream | null, enabled?: boolean) {
         let current = remoteAudio

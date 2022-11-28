@@ -1,72 +1,112 @@
 import HostStream from '@/src/components/host_stream';
 import LocalStreamManager from '@/src/components/local_stream_manager';
+import { Session } from 'next-auth';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useState } from 'react';
-import { ChatMessage, DataEvent, DataPayload } from '../utils/meetings';
+import { ChatMessage, DataEvent, DataPayload, ParticipantInfo } from '../utils/meetings';
 import MessageDisplay from './MessageDisplay';
 import MessageInput from './MessageInput';
 
 const peer = new Peer();
 
 interface MeetingParticipantProps {
-    hostid: string,
+    hostId: string,
+    session: Session | null,
 }
 
-export default function MeetingParticipant({ hostid }: MeetingParticipantProps) {
+export default function MeetingParticipant({ hostId, session }: MeetingParticipantProps) {
     const [peerId, setPeerId] = useState('')
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-    const [hostConn, setHostConn] = useState<DataConnection>();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [participantMap, setParticipantMap] = useState<Map<string, ParticipantInfo>>(new Map());
 
     const copyInviteLink = useCallback(
-        () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostid}`) },
-        [hostid]
+        () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostId}`) },
+        [hostId]
+    );
+
+    const onNewConnection = useCallback(
+        (conn: DataConnection) => {
+            // Note: conn.peer is available even if conn isn't open yet
+            conn.on("data", (data) => {
+                console.log(`Received: ${JSON.stringify(data)}`);
+                const payload = data as DataPayload;
+                switch (payload.event) {
+                    case DataEvent.CHAT_MESSAGE: {
+                        setMessages(prev => [...prev, payload.data as ChatMessage]);
+                        break;
+                    }
+
+                    default: {
+                        // Do nothing on unknown events
+                        console.error(`Unknown event received: ${JSON.stringify(payload)}`);
+                        break;
+                    }
+                }
+            });
+
+            conn.on("open", () => {
+                const payload: DataPayload = {
+                    event: DataEvent.CHAT_MESSAGE,
+                    data: {
+                        senderName: session?.user?.name ?? "Guest",
+                        timestamp: Date.now(),
+                        message: 'hi!'
+                    },
+                };
+                conn.send(payload);
+                console.log("Message sent to host");
+                setMessages(m => [...m, (payload.data as ChatMessage)]);
+            });
+
+            conn.on('close', () => {
+                // Remove participant from map
+                console.log(`Closing data conn ${conn.peer}`);
+                setParticipantMap((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(conn.peer);
+                    return newMap;
+                });
+            })
+
+            // Creates new shallow Map using prev map + new conn
+            setParticipantMap((prev) => (
+                new Map(
+                    prev.set(conn.peer, {
+                        name: conn.metadata.name,
+                        dataConn: conn,
+                    })
+                )
+            ));
+        },
+        [session]
+    );
+
+    useEffect(
+        () => {
+            peer.on('connection', onNewConnection);
+            console.log("Connection listener set");
+
+            // unsubscribe this specific listener
+            return () => {
+                peer.off('connection', onNewConnection);
+                console.log("Connection listener unsubscribed");
+            }
+        },
+        [onNewConnection]
     );
 
     useEffect(
         () => {
             const onPeerOpen = (id: string) => {
                 console.log("My participant ID is: " + id);
-                console.log("joining host" + hostid + " with id " + id)
+                console.log("joining host" + hostId + " with id " + id);
 
-                // TODO: Turn metadata into interface
-                const conn = peer.connect(hostid, { metadata: { name: "Participant A" } });
-
-                conn.on("data", (data) => {
-                    const payload = data as DataPayload;
-                    switch (payload.event) {
-                        case DataEvent.CHAT_MESSAGE: {
-                            setMessages(prev => [...prev, payload.data]);
-                            break;
-                        }
-
-                        default: {
-                            // Do nothing on unknown events
-                            console.error(`Unknown event received: ${data}`);
-                            break;
-                        }
-                    }
-                });
-
-                conn.on('close', () => {
-                    console.log(`Closing data conn with host ${conn.peer}`);
-                })
-
-                conn.on("open", () => {
-                    const payload: DataPayload = {
-                        event: DataEvent.CHAT_MESSAGE,
-                        data: {
-                            senderName: "Participant A",
-                            timestamp: Date.now(),
-                            message: 'hi!'
-                        },
-                    };
-                    conn.send(payload);
-                    setMessages(m => [...m, payload.data]);
-                });
+                const hostConn = peer.connect(hostId, { metadata: { name: session?.user?.name ?? "Guest" } });
+                // manual call needed since our connection doesn't trigger event
+                onNewConnection(hostConn);
 
                 setPeerId(id);
-                setHostConn(conn);
             };
             peer.on('open', onPeerOpen);
             // unsubscribe this specific listener
@@ -74,45 +114,50 @@ export default function MeetingParticipant({ hostid }: MeetingParticipantProps) 
                 peer.off('open', onPeerOpen);
             }
         },
-        [hostid]
+        [hostId, session, onNewConnection]
     );
 
-    const closeHostConn = useCallback(
-        () => {
-            if (hostConn !== undefined) {
-                console.log(`Closing connection with host ${hostConn.peer}`);
-                hostConn.close();
-            }
-        },
-        [hostConn]
-    );
+    // const closeHostConn = useCallback(
+    //     () => {
+    //         if (hostConn !== undefined) {
+    //             console.log(`Closing connection with host ${hostConn.peer}`);
+    //             hostConn.close();
+    //         }
+    //     },
+    //     [hostConn]
+    // );
 
     const sendMessageToAll = useCallback(
         (msg: string) => {
-            // TODO: Get user's name here
             const payload: DataPayload = {
                 event: DataEvent.CHAT_MESSAGE,
                 data: {
-                    senderName: "Participant A",
+                    senderName: session?.user?.name ?? "Guest",
                     timestamp: Date.now(),
                     message: msg,
                 },
             };
 
-            if (hostConn !== undefined) {
-                hostConn.send(payload);
-                setMessages(m => [...m, payload.data])
-            }
+            // participant only knows people in meeting, none in waiting room
+            // so send to all.
+            participantMap.forEach(({ dataConn, mediaConn }) => {
+                dataConn.send(payload);
+            });
+            setMessages(m => [...m, payload.data as ChatMessage])
         },
-        [hostConn]
+        [participantMap, session]
     );
+
+
+
+
 
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
                     <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} />
-                    <HostStream peer={peer} peerid={hostid} localStream={localStream} />
+                    <HostStream peer={peer} peerid={hostId} localStream={localStream} />
                 </div>
 
                 <div id="bottom_controls" className='shrink-0 basis-1/6'></div>
