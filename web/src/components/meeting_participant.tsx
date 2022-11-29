@@ -29,6 +29,9 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
     const [queuePos, setQueuePos] = useState<number>(0);
     const [queueTotal, setQueueTotal] = useState<number>(0);
 
+    // actual value doesn't matter, it is toggled to re-apply mute
+    const [mutedByHost, setMutedByHost] = useState<boolean>(false);
+
     const copyInviteLink = useCallback(
         () => { navigator.clipboard.writeText(`${window.location.origin}/meeting/${hostId}`) },
         [hostId]
@@ -153,10 +156,7 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                 }
 
                 case DataEvent.MUTE_MESSAGE: {
-                    const updateMsg = payload.data as QueueUpdateMessage;
-                    console.log(JSON.stringify(updateMsg));
-                    setQueuePos(updateMsg.position);
-                    setQueueTotal(updateMsg.total);
+                    setMutedByHost(prev => !prev);
                     break;
                 }
 
@@ -220,7 +220,7 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                 peer.off('open', onPeerOpen);
             }
         },
-        [hostId, currUserName, handleHostMessages]
+        [hostId, currUserName, handleHostMessages, redirectFn]
     );
 
     useEffect(
@@ -281,7 +281,7 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} />
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} mutedByHost={mutedByHost}/>
                     {/* <HostStream peer={peer} peerid={hostId} localStream={localStream} /> */}
                     {participantList.map(([peerId, { mediaConn }]) => (
                         (mediaConn !== undefined) &&
