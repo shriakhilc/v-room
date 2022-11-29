@@ -47,7 +47,8 @@ export default function ReplyBox(props: ReplyBoxProps) {
     const { data: answerChildren, status: answerChildrenStatus } = trpc.useQuery(['answer.nestedAnswers', { answerId: props.answer.answerId }]);
 
     const getCurrentLike = () => {
-        const existingLike = props.answer.likes.find(like => like.userId === props.user.id);
+        const existingLike = props.answer.likes.find(like => like.userId === data?.user?.id);
+        console.log(existingLike);
         if(existingLike && existingLike.likeType == LikeType.like) {
             return 1
         }
@@ -65,7 +66,7 @@ export default function ReplyBox(props: ReplyBoxProps) {
         await addToAnswer.mutateAsync(
             {
                 parent_id: props.answer.answerId,
-                userId: props.user.id,
+                userId: data?.user?.id as string,
                 answerStr: replyText,
             },
             {
@@ -127,12 +128,12 @@ export default function ReplyBox(props: ReplyBoxProps) {
     }
 
     const updateLikeStatus = async (e: LikeType) => {
-        const existingLike = props.answer.likes.find(like => like.userId === props.user.id);
+        const existingLike = props.answer.likes.find(like => like.userId === data?.user?.id);
         if(existingLike && existingLike.likeType === e) {
             setCurrentLike(0);
             await removeLike.mutateAsync( 
                 {
-                    userId: props.user.id,
+                    userId: data?.user?.id as string,
                     answerId: props.answer.answerId,
                 },
                 {
@@ -157,7 +158,7 @@ export default function ReplyBox(props: ReplyBoxProps) {
             }
             await updateLike.mutateAsync( 
                 {
-                    userId: props.user.id,
+                    userId: data?.user?.id as string,
                     answerId: props.answer.answerId,
                     likeType: e
                 },
@@ -184,7 +185,7 @@ export default function ReplyBox(props: ReplyBoxProps) {
             }
             await addLike.mutateAsync( 
                 {
-                    userId: props.user.id,
+                    userId: data?.user?.id as string,
                     answerId: props.answer.answerId,
                     likeType: e
                 },

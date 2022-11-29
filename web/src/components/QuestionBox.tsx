@@ -51,7 +51,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
     const { data, status } = useSession();
 
     const getCurrentLike = () => {
-        const existingLike = props.question.likes.find(like => like.userId === props.user.id);
+        const existingLike = props.question.likes.find(like => like.userId === data?.user?.id);
         if(existingLike && existingLike.likeType == LikeType.like) {
             return 1
         }
@@ -132,12 +132,12 @@ export default function QuestionBox(props: QuestionBoxProps) {
     }
 
     const updateLikeStatus = async (e: LikeType) => {
-        const existingLike = props.question.likes.find(like => like.userId === props.user.id);
+        const existingLike = props.question.likes.find(like => like.userId === data?.user?.id);
         if(existingLike && existingLike.likeType === e) {
             setCurrentLike(0);
             await removeLike.mutateAsync( 
                 {
-                    userId: props.user.id,
+                    userId: data?.user?.id as string,
                     questionId: props.question.questionId,
                 },
                 {
@@ -161,7 +161,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
             }
             await updateLike.mutateAsync( 
                 {
-                    userId: props.user.id,
+                    userId: data?.user?.id as string,
                     questionId: props.question.questionId,
                     likeType: e
                 },
@@ -187,7 +187,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
             }
             await addLike.mutateAsync( 
                 {
-                    userId: props.user.id,
+                    userId: data?.user?.id as string,
                     questionId: props.question.questionId,
                     likeType: e
                 },
