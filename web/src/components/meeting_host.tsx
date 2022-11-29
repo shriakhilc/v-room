@@ -241,11 +241,25 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
         []
     );
 
+    const muteAll = useCallback(
+        () => {
+            // Sending to only those who joined the meeting, not those in waiting room
+            meetingList.forEach(([peerId, { dataConn }]) => {
+                dataConn.send(
+                    {
+                        event: DataEvent.MUTE_MESSAGE
+                    } as DataPayload
+                );
+            });
+        },
+        [meetingList]
+    );
+
     return (
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} host classroomid={classroomid} peerid={hostId} />
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} mutedByHost={false} />
                     {meetingList.map(([peerId, { dataConn, mediaConn }]) => (
                         (mediaConn !== undefined) &&
                         <ParticipantStream key={peerId} call={mediaConn} isHost={true} onKick={() => kickUser(dataConn)} />
@@ -253,6 +267,9 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
                 </div>
 
                 <div id="bottom_controls" className='shrink-0 pb-2 btn-group btn-group-horizontal justify-end'>
+                    <button className="btn btn-success" onClick={muteAll}>
+                        Mute All
+                    </button>
                     <button className="btn btn-error" onClick={endMeeting}>
                         End Meeting
                     </button>
