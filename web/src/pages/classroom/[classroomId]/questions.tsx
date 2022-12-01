@@ -257,11 +257,13 @@ const QuestionListPage: NextPage = () => {
 
         <main>
         <section className="container mx-auto flex flex-col items-left p-4">
+
             {questions &&
               <div className="overflow-auto max-h-[50rem]">
                 <div className="py-2 text-4xl text-red-500 font-bold">
                   Questions for {classroom.name}
                 </div>
+                <button onClick={() => { router.push('/classroom/' + classroom.id) }} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">{'<<'} Back to Classroom</button>
                 <div className="flex flex-row items-center justify-between px-2">
                   <div>Filter results: <input value={searchStr} onChange={(e) => setSearchStr(e.currentTarget.value)} type="text" className="text-gray-900 rounded"></input></div> 
                   <div><FilterDropdown onSortQuestions={onSortQuestions}></FilterDropdown></div>
@@ -270,7 +272,7 @@ const QuestionListPage: NextPage = () => {
                   <ul>
                     {[...questions].sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active} classroomId={classroom.id}></QuestionBox>
                       </li>
                     ))}
                   </ul>
@@ -279,7 +281,7 @@ const QuestionListPage: NextPage = () => {
                   <ul>
                     {searchQuestions.questions.sort(compareFn).map(question => (
                       <li key={question.questionId}>
-                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
+                        <QuestionBox question={question} answers={question.answer} user={question.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active} classroomId={classroom.id}></QuestionBox>
                       </li>
                     ))}
                   </ul>

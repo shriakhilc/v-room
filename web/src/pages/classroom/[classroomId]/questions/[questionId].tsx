@@ -171,7 +171,9 @@ const SingleQuestionPage: NextPage = () => {
   }
 
   
-  if(!allQuestions.includes(thisQuestion)) {
+  if(!allQuestions.find(element => element.questionId === thisQuestion.questionId)) {
+    console.log(allQuestions);
+    console.log(thisQuestion);
     return (
         <>
           <div className="container mx-auto">
@@ -205,10 +207,8 @@ const SingleQuestionPage: NextPage = () => {
           <section className="container mx-auto flex flex-col items-left p-4">
             {thisQuestion &&
               <div className="overflow-auto max-h-[50rem]">
-                <div className="py-2 text-4xl text-red-500 font-bold">
-                  Question View
-                </div>
-                <QuestionBox question={thisQuestion} answers={thisQuestion.answer} user={thisQuestion.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active}></QuestionBox>
+                <button onClick={() => { router.push('/classroom/' + classroom.id + "/questions") }} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 m-4 rounded">{'<<'} Back to Questions</button>
+                <QuestionBox question={thisQuestion} answers={thisQuestion.answer} user={thisQuestion.user} router={router} currentUserRole={userOnClassroom.role} classroomActive={classroom.active} classroomId={classroom.id}></QuestionBox>
               </div>
             }
           </section>

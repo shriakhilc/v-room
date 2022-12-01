@@ -9,6 +9,7 @@ import {
     faArrowUp,
     faArrowDown
   } from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
 
 interface QuestionBoxProps {
     question: Prisma.QuestionGetPayload<{
@@ -31,6 +32,7 @@ interface QuestionBoxProps {
     router: NextRouter,
     currentUserRole: UserRole,
     classroomActive: boolean,
+    classroomId: string,
 }
 
 export default function QuestionBox(props: QuestionBoxProps) {
@@ -214,6 +216,10 @@ export default function QuestionBox(props: QuestionBoxProps) {
         return props.question.likes.filter(like => like.likeType === LikeType.dislike).length;
     }
 
+    const getQuestionlink = () => {
+        return '/classroom/' + props.classroomId + '/questions/' + props.question.questionId;
+    }
+
     return (
         <div className="p-4 border-b-2 bg-gray-50 border rounded-md m-2">
             <div className="py-2 text-2xl text-gray-900 font-bold">
@@ -234,7 +240,7 @@ export default function QuestionBox(props: QuestionBoxProps) {
             </div>
             <div className="flex flex-row justify-between">
                 <div className="py-2 text-md text-gray-500">
-                    Asked by {props.user.name} on {props.question.createdAt.toLocaleDateString('en-US')}
+                    <Link href={getQuestionlink()}><a className="underline hover:text-red-500">Asked by {props.user.name} on {props.question.createdAt.toLocaleDateString('en-US')}</a></Link>
                 </div>
                 <div className="text-red-500 flex flex-row align-center"> 
                     {currentLike <= 0 &&  
