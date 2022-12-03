@@ -228,8 +228,8 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
             // By using a private peer server, the risk of auto-accepting unwanted calls is low
             // but additional checks based on info shared by host can be implemented
             const onCallReceived = (call: MediaConnection) => {
-                console.log(`participant received call: ${JSON.stringify(call)}`);
-                console.log(`localstream: ${JSON.stringify(localStream)}`);
+                console.log(`participant received call`);
+                console.log(`localstream: ${(localStream == null)}`);
                 // participants will auto-answer any calls they receive
                 call.answer(localStream ?? undefined);
 
