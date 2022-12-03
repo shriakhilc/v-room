@@ -27,7 +27,7 @@ export default function ParticipantStream({ call, onKick, isHost }: ParticipantS
                 console.log("set stream state");
             };
             call.on('stream', onCallStream);
-            console.log("set onCall listener");
+            console.log("set onCallStream listener");
             // unsubscribe this specific listener
             return () => {
                 call.off('stream', onCallStream);
