@@ -240,6 +240,7 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
         () => {
             // By using a private peer server, the risk of auto-accepting unwanted calls is low
             // but additional checks based on info shared by host can be implemented
+            // the challenge is that call might arrive before map is updated with info from host.
             const onCallReceived = (call: MediaConnection) => {
                 console.log(`participant received call`);
                 console.log(`localstream: ${(localStream == null)}`);
@@ -257,7 +258,7 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                             })
                         );
                     } else {
-                        console.error(`Call from someone not in map ${call.peer}`);
+                        //console.log(`Call from someone not in map ${call.peer}`);
                         return new Map(
                             prev.set(call.peer, {
                                 mediaConn: call,
