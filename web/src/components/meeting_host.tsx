@@ -279,9 +279,10 @@ export default function MeetingHost({ classroomid, currUserName }: MeetingHostPr
             <div id="sidebar" className='flex flex-col px-2 divide-y divide-solid divide-gray-500 space-y-2 h-full basis-1/4'>
                 {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
                 <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
-                    <p className='text-lg font-semibold'>Participants ({meetingList.length} in meeting, {waitingList.length} waiting)</p>
+                    <p className='text-lg font-semibold'>Participants ({meetingList.length + 1} in meeting, {waitingList.length} waiting)</p>
 
                     <div className='flex flex-col grow overflow-y-auto'>
+                        <div>You ({currUserName})</div>
                         {meetingList.concat(waitingList).map(([peerId, participantInfo]) => (
                             <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => callParticipant(participantInfo)} isHost={true}></ParticipantDisplay>
                         ))}

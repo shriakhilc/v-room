@@ -315,12 +315,13 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                 {/* overflow-x-hidden needed because btn transition animation overflows x and briefly displays scrollbar */}
                 <div id="participants" className='flex flex-col grow overflow-y-auto overflow-x-hidden'>
                     {queuePos === -1 ?
-                        (<p className='text-lg font-semibold'>Participants ({participantList.length} in meeting, {queueTotal} waiting)</p>)
+                        (<p className='text-lg font-semibold'>Participants ({participantList.length + 1} in meeting, {queueTotal} waiting)</p>)
                         :
                         (<p className='text-lg font-semibold'>Participants (# {queuePos + 1} of {queueTotal} waiting)</p>)
                     }
 
                     <div className='flex flex-col grow overflow-y-auto'>
+                        <div>You ({currUserName})</div>
                         {participantList.map(([peerId, participantInfo]) => (
                             <ParticipantDisplay key={peerId} info={participantInfo} answerCall={() => { return; }} isHost={false}></ParticipantDisplay>
                         ))}
