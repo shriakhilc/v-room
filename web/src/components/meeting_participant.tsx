@@ -62,15 +62,28 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                 });
             });
 
+
             // Creates new shallow Map using prev map + new conn
-            setParticipantMap((prev) => (
-                new Map(
-                    prev.set(conn.peer, {
-                        name: conn.metadata.name,
-                        dataConn: conn,
-                    })
-                )
-            ));
+            setParticipantMap((prev) => {
+                const participantInfo = prev.get(conn.peer);
+                // if peer is a known connection 
+                if (participantInfo !== undefined) {
+                    return new Map(
+                        prev.set(conn.peer, {
+                            ...participantInfo,
+                            name: conn.metadata.name,
+                            dataConn: conn,
+                        })
+                    );
+                } else {
+                    return new Map(
+                        prev.set(conn.peer, {
+                            name: conn.metadata.name,
+                            dataConn: conn,
+                        })
+                    );
+                }
+            });
         },
         [handleChatMessages]
     );
@@ -245,8 +258,12 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
                         );
                     } else {
                         console.error(`Call from someone not in map ${call.peer}`);
+                        return new Map(
+                            prev.set(call.peer, {
+                                mediaConn: call,
+                            } as ParticipantInfo)
+                        );
                     }
-                    return prev;
                 });
             }
             console.log('participant setting call listener');
@@ -284,7 +301,7 @@ export default function MeetingParticipant({ hostId, currUserName, redirectFn }:
         <main className="container mx-auto flex flex-row h-screen w-screen max-h-screen">
             <div className='flex flex-col grow'>
                 <div id="video_grid" className='flex flex-row flex-wrap overflow-auto grow gap-1 p-1 justify-evenly content-start'>
-                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} mutedByHost={mutedByHost}/>
+                    <LocalStreamManager localStream={localStream} setLocalStream={setLocalStream} mutedByHost={mutedByHost} />
                     {/* <HostStream peer={peer} peerid={hostId} localStream={localStream} /> */}
                     {participantList.map(([peerId, { mediaConn }]) => (
                         (mediaConn !== undefined) &&
