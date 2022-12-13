@@ -24,7 +24,7 @@ This project is licensed under the [MIT License](/LICENSE.md).
 
 ## Miscellaneous
 
-This project was developed as part of the Virginia Tech course "CS 5934: Capstone Project". The final report and presentation are available at VTechWorks.
+This project was developed as part of the Virginia Tech course "CS 5934: Capstone Project". The final report and presentation are available at [VTechWorks](http://hdl.handle.net/10919/112858).
 
 This is a public mirror of a private repository. It preserves the actual commit history of our development in Aug-Dec 2022.
 
